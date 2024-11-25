@@ -170,34 +170,28 @@ authRouter.get('/isLoggedIn', (req, res) => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res
-            .status(401)
-            .json({
-                code: 4001,
-                message: '인증이 필요합니다.',
-                data: { isLoggedIn: false },
-            });
+        return res.status(401).json({
+            code: 4001,
+            message: '인증이 필요합니다.',
+            data: { isLoggedIn: false },
+        });
     }
 
     const token = authHeader.split(' ')[1];
 
     const loggedInStatus = isLoggedIn(token);
     if (loggedInStatus) {
-        return res
-            .status(200)
-            .json({
-                code: 200,
-                message: '로그인 상태입니다.',
-                data: { isLoggedIn: true },
-            });
+        return res.status(200).json({
+            code: 200,
+            message: '로그인 상태입니다.',
+            data: { isLoggedIn: true },
+        });
     } else {
-        return res
-            .status(401)
-            .json({
-                code: 4001,
-                message: '인증이 필요합니다.',
-                data: { isLoggedIn: false },
-            });
+        return res.status(401).json({
+            code: 4001,
+            message: '인증이 필요합니다.',
+            data: { isLoggedIn: false },
+        });
     }
 });
 
