@@ -1,10 +1,9 @@
-import { likeIdStorageFilename, likeIdStorage, flush } from "./inMemoryDB.js";
+import { generateLikeId } from './inMemoryDB.js';
 
 export class PostLike {
     constructor(userId, postId) {
-        this.id = likeIdStorage.likeId++;
+        this.id = generateLikeId();
         this.userId = userId;
         this.postId = postId;
-        flush(likeIdStorageFilename, likeIdStorage);
     }
 }

@@ -1,4 +1,8 @@
-import { viewHistories, viewHistoryJsonFilename, flush } from '../model/inMemoryDB.js';
+import {
+    viewHistories,
+    viewHistoryJsonFilename,
+    flush,
+} from '../model/inMemoryDB.js';
 
 class IViewHistoryDao {
     constructor() {
