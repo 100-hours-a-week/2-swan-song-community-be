@@ -1,4 +1,4 @@
-import { likes } from '../model/inMemoryDB.js';
+import { likes, likeJsonFilename, flush } from '../model/inMemoryDB.js';
 
 class IPostLikeDao {
     constructor() {
@@ -74,6 +74,7 @@ class InMemoryPostLikeDao extends IPostLikeDao {
 
     createPostLike(postLike) {
         this.postLikes.push(postLike);
+        flush(likeJsonFilename, this.postLikes);
         return postLike;
     }
 
@@ -89,6 +90,7 @@ class InMemoryPostLikeDao extends IPostLikeDao {
         }
 
         this.postLikes.splice(postLikeIdx, 1);
+        flush(likeJsonFilename, this.postLikes);
     }
 
     deleteAllByUserId(userId) {
@@ -98,6 +100,7 @@ class InMemoryPostLikeDao extends IPostLikeDao {
         postLikesToDelete.forEach(c => {
             this.deletePostLike(c);
         });
+        flush(likeJsonFilename, this.postLikes);
     }
 }
 

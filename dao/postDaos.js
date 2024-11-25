@@ -1,4 +1,4 @@
-import { posts } from '../model/inMemoryDB.js';
+import { posts, postJsonFilename, flush } from '../model/inMemoryDB.js';
 import { binarySearch } from '../dao/algorithm.js';
 
 class IPostDao {
@@ -61,6 +61,7 @@ class InMemoryPostDao extends IPostDao {
 
     createPost(post) {
         this.posts.push(post);
+        flush(postJsonFilename, this.posts);
         return post;
     }
 
@@ -96,13 +97,14 @@ class InMemoryPostDao extends IPostDao {
         post.title = title;
         post.content = content;
         post.contentImageUrl = contentImageUrl;
-
+        flush(postJsonFilename, this.posts);
         return post;
     }
 
     deletePost(post) {
         const postIdx = this.posts.indexOf(post);
         this.posts.splice(postIdx, 1);
+        flush(postJsonFilename, this.posts);
     }
 }
 

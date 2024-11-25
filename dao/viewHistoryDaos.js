@@ -1,4 +1,4 @@
-import { viewHistories } from '../model/inMemoryDB.js';
+import { viewHistories, viewHistoryJsonFilename, flush } from '../model/inMemoryDB.js';
 
 class IViewHistoryDao {
     constructor() {
@@ -48,6 +48,7 @@ class InMemoryViewHistoryDao extends IViewHistoryDao {
 
     createViewHistory(viewHistory) {
         this.viewHistories.push(viewHistory);
+        flush(viewHistoryJsonFilename, this.viewHistories);
     }
 
     deleteViewHistoriesByPostId(postId) {
@@ -58,6 +59,7 @@ class InMemoryViewHistoryDao extends IViewHistoryDao {
             const idx = this.viewHistories.indexOf(v);
             this.viewHistories.splice(idx, 1);
         });
+        flush(viewHistoryJsonFilename, this.viewHistories);
     }
 
     deleteViewHistoriesByUserId(userId) {
@@ -68,6 +70,7 @@ class InMemoryViewHistoryDao extends IViewHistoryDao {
             const idx = this.viewHistories.indexOf(v);
             this.viewHistories.splice(idx, 1);
         });
+        flush(viewHistoryJsonFilename, this.viewHistories);
     }
 }
 

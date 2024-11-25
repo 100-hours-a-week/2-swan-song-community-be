@@ -1,4 +1,4 @@
-import { comments } from '../model/inMemoryDB.js';
+import { comments, commentJsonFilename, flush } from '../model/inMemoryDB.js';
 import { binarySearch } from '../dao/algorithm.js';
 
 class ICommentDao {
@@ -67,14 +67,14 @@ class InMemoryCommentDao extends ICommentDao {
 
     createComment(comment) {
         this.comments.push(comment);
+        flush(commentJsonFilename, this.comments);
         return comment;
     }
 
     updateComment(commentId, content) {
         const comment = this.findById(commentId);
-
         comment.content = content;
-
+        flush(commentJsonFilename, this.comments);
         return comment;
     }
 
@@ -90,6 +90,7 @@ class InMemoryCommentDao extends ICommentDao {
         }
 
         this.comments.splice(commentIdx, 1);
+        flush(commentJsonFilename, this.comments);
     }
 
     deleteCommentsByUserId(userId) {
@@ -97,6 +98,7 @@ class InMemoryCommentDao extends ICommentDao {
         comments.forEach(comment => {
             this.deleteComment(comment.id);
         });
+        flush(commentJsonFilename, this.comments);
     }
 }
 

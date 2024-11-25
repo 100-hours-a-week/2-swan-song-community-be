@@ -1,4 +1,4 @@
-import { users } from '../model/inMemoryDB.js';
+import { users, userJsonFilename, flush } from '../model/inMemoryDB.js';
 import { binarySearch } from '../dao/algorithm.js';
 
 class IUserDao {
@@ -69,6 +69,7 @@ class InMemoryUserDao extends IUserDao {
 
     createUser(user) {
         this.users.push(user);
+        flush(userJsonFilename, this.users);
     }
 
     updateUser(userId, updatedUserDto) {
@@ -76,16 +77,19 @@ class InMemoryUserDao extends IUserDao {
 
         user.nickname = updatedUserDto.nickname;
         user.profileImageUrl = updatedUserDto.profileImageUrl;
+        flush(userJsonFilename, this.users);
     }
 
     updateUserPassword(userId, hashedPassword) {
         const user = this.findById(userId);
         user.password = hashedPassword;
+        flush(userJsonFilename, this.users);
     }
 
     deleteUser(user) {
         const userIdx = this.users.indexOf(user);
         this.users.splice(userIdx, 1);
+        flush(userJsonFilename, this.users);
     }
 }
 
