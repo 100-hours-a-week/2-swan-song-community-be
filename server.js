@@ -2,6 +2,8 @@ import express from 'express';
 import 'express-async-errors';
 
 import bodyParser from 'body-parser';
+
+import staticRouter from './routes/staticRouter.js';
 import authRouter from './routes/authRouter.js';
 import userRouter from './routes/userRouter.js';
 import postRouter from './routes/postRouter.js';
@@ -22,6 +24,7 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
+app.use(staticRouter);
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/posts', postRouter);
