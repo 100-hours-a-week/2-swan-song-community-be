@@ -75,7 +75,7 @@ class AuthController {
         };
     }
 
-    async login(res, cookieSessionId, email, password) {
+    async login(res, sessionIdToRemove, email, password) {
         // 해당 사용자가 존재하는지, 비밀번호가 일치하는지 확인
         const user = await userDao.findByEmail(email);
         if (!user || !(await bcrypt.compare(password, user.password))) {
@@ -83,14 +83,21 @@ class AuthController {
         }
 
         // 기존 세션에 저장된 로그인 기록 제거
-        const existingSession = isLoggedIn(cookieSessionId);
+        const existingSession = isLoggedIn(sessionIdToRemove);
         if (existingSession && existingSession.id === user.id) {
-            removeSession(cookieSessionId);
+            removeSession(sessionIdToRemove);
         }
         removeSessionByUserId(user.id);
 
         const sessionId = addSession(user);
-        res.cookie('session_id', sessionId);
+        const sessionOptions = {
+            maxAge: 1000 * 60 * 60 * 24 * 7, // 7일
+            httpOnly: true,
+            sameSite: 'None',
+            secure: true,
+        };
+
+        res.cookie('session_id', sessionId, sessionOptions);
 
         // 로그인 성공 시 세션에 사용자 정보 저장 (비밀번호 제외)
         return {

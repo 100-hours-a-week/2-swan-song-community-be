@@ -102,7 +102,7 @@ authRouter.get('/check-nickname', (req, res) => {
 // 로그인
 authRouter.post('/signin', upload.none(), async (req, res) => {
     const { email, password } = req.body;
-    const sessionId = req.cookies.session_id;
+    const sessionIdToRemove = req.cookies.session_id; // 기존에 발급된 세션 ID
 
     // 필수 입력값 확인
     if (!email || !password || email.length === 0 || password.length === 0) {
@@ -122,12 +122,13 @@ authRouter.post('/signin', upload.none(), async (req, res) => {
     try {
         const result = await authController.login(
             res,
-            sessionId,
+            sessionIdToRemove,
             email,
             password,
         );
         return res.status(200).json(result);
     } catch (errorResponse) {
+        console.error(errorResponse);
         res.status(200).json(errorResponse);
     }
 });
@@ -161,6 +162,42 @@ authRouter.delete('/withdrawal', (req, res) => {
         authController.withdraw(res, sessionId, userId);
     } catch (errorResponse) {
         res.status(200).json(errorResponse);
+    }
+});
+
+// client에서 로그인 여부 확인을 위한 API
+authRouter.get('/isLoggedIn', (req, res) => {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res
+            .status(401)
+            .json({
+                code: 4001,
+                message: '인증이 필요합니다.',
+                data: { isLoggedIn: false },
+            });
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    const loggedInStatus = isLoggedIn(token);
+    if (loggedInStatus) {
+        return res
+            .status(200)
+            .json({
+                code: 200,
+                message: '로그인 상태입니다.',
+                data: { isLoggedIn: true },
+            });
+    } else {
+        return res
+            .status(401)
+            .json({
+                code: 4001,
+                message: '인증이 필요합니다.',
+                data: { isLoggedIn: false },
+            });
     }
 });
 
