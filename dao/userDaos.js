@@ -64,7 +64,7 @@ class InMemoryUserDao extends IUserDao {
     }
 
     findByNickname(nickname) {
-        return this.users.some(user => user.nickname === nickname);
+        return this.users.find(user => user.nickname === nickname);
     }
 
     createUser(user) {

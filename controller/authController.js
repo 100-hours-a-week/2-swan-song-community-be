@@ -61,7 +61,7 @@ class AuthController {
     }
 
     checkNicknameAvailability(nickname) {
-        if (userDao.findUserByNickname(nickname) !== undefined) {
+        if (userDao.findByNickname(nickname) !== undefined) {
             throw {
                 code: 4009,
                 message: '닉네임이 중복되었습니다.',
