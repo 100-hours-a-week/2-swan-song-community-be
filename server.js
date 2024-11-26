@@ -1,6 +1,9 @@
 import express from 'express';
 import 'express-async-errors';
 
+import logger from './middlewares/logger.js';
+import dotenv from 'dotenv';
+
 import bodyParser from 'body-parser';
 
 import staticRouter from './routes/staticRouter.js';
@@ -9,9 +12,12 @@ import userRouter from './routes/userRouter.js';
 import postRouter from './routes/postRouter.js';
 import cors from 'cors';
 
-const app = express();
 
-const port = 8181;
+const app = express();
+dotenv.config();
+
+const port = process.env.PORT;
+const env = process.env.NODE_ENV;
 
 app.use(express.json());
 app.use(bodyParser.json());
@@ -40,5 +46,5 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(port, () => {
-    console.log(`서버가 ${port}번 포트에서 실행 중입니다.`);
+    logger.info(`${env} 서버가 ${port}번 포트에서 실행 중입니다.`);
 });

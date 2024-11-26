@@ -15,11 +15,13 @@
     "description": "",
     "dependencies": {
         "@eslint/eslintrc": "^3.1.0",
+        "app-root-path": "^3.1.0",
         "async-middleware": "^1.2.1",
         "bcryptjs": "^2.4.3",
         "body-parser": "^1.20.3",
         "cookie-parser": "^1.4.7",
         "cors": "^2.8.5",
+        "dotenv": "^16.4.5",
         "eslint-config-airbnb": "^19.0.4",
         "eslint-plugin-prettier": "^5.2.1",
         "express": "^4.21.1",
@@ -28,7 +30,8 @@
         "mongoose": "^8.8.1",
         "multer": "^1.4.5-lts.1",
         "prettier": "^3.3.3",
-        "uuid": "^11.0.2"
+        "uuid": "^11.0.2",
+        "winston": "^3.17.0"
     },
     "type": "module",
     "keywords": []
