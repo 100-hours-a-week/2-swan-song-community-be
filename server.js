@@ -12,7 +12,6 @@ import userRouter from './routes/userRouter.js';
 import postRouter from './routes/postRouter.js';
 import cors from 'cors';
 
-
 const app = express();
 dotenv.config();
 
@@ -37,12 +36,21 @@ app.use('/api/v1/posts', postRouter);
 
 // 에러 핸들러
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({
-        code: 5000,
-        message: '요청을 처리할 수 없습니다.',
-        data: null,
-    });
+    const query = JSON.stringify(req.query);
+    const body = JSON.stringify(req.body);
+    const headers = JSON.stringify(req.headers);
+
+    logger.error(
+        `${req.method} ${req.originalUrl} ${headers} ${query} ${body} - ${err.errorResponse.message}`,
+    );
+    res.status(err.httpStatus || 500).json(
+        err.errorResponse || {
+            code: 5000,
+            message: '현재 처리가 어렵습니다.',
+            data: null,
+        },
+    );
+    next();
 });
 
 app.listen(port, () => {

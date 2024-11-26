@@ -4,6 +4,10 @@ import 'express-async-errors';
 import fs from 'fs';
 import path from 'path';
 
+import logger from '../middlewares/logger.js';
+
+import { ErrorWrapper } from '../module/errorWrapper.js';
+
 // 이미지 삭제
 export const deleteImage = async imagePath => {
     const imageFullPath = imagePath.startsWith('public')
@@ -13,13 +17,14 @@ export const deleteImage = async imagePath => {
     try {
         await fs.promises.unlink(imageFullPath);
     } catch (err) {
-        console.error(`이미지 삭제 중 오류 발생: ${err.message}`);
+        logger.Error(`이미지 삭제 중 오류 발생: ${err.message}`);
+        throw new ErrorWrapper(500, 5000, '이미지 삭제 중 오류 발생', null);
     }
 };
 
 export const saveImage = async image => {
     if (!image || !image.path || !image.filename) {
-        throw new Error('유효하지 않은 파일입니다.');
+        throw new ErrorWrapper(400, 4000, '유효하지 않은 파일입니다', null);
     }
 
     const { path: tempPath, filename, mimetype } = image;
@@ -33,13 +38,15 @@ export const saveImage = async image => {
         // 저장된 파일 경로 반환
         return filePath.replace('public', '');
     } catch (error) {
-        console.error(`이미지 저장 중 오류 발생: ${error.message}`);
+        logger.Error(`이미지 저장 중 오류 발생: ${error.message}`);
+        throw new ErrorWrapper(500, 5000, '이미지 저장 중 오류 발생', null);
     } finally {
-        // 임시 파일 제거
+        // 임시 파일 제거 (라우터에서 임시 파일을 제거하도록 변경해도 좋을 듯함)
         try {
+            logger.info(`임시 파일 제거: ${tempPath}`);
             await fs.promises.unlink(tempPath);
         } catch (error) {
-            console.error(`임시 파일 제거 중 오류 발생: ${error.message}`);
+            logger.error(`임시 파일 제거 중 오류 발생: ${error.message}`);
         }
     }
 };

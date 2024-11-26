@@ -2,14 +2,20 @@
 
 import express from 'express';
 import 'express-async-errors';
-import { authController } from '../controller/authController.js';
+
+import { ErrorWrapper } from '../module/errorWrapper.js';
+
 import multer from 'multer';
 import cookieParser from 'cookie-parser';
+
+import { authController } from '../controller/authController.js';
 
 import { getLoggedInUser, isLoggedIn } from '../module/authUtils.js';
 
 const authRouter = express.Router();
-const upload = multer({ dest: 'public/images/' }); // 이미지 업로드를 위한 multer 설정
+const upload = multer({
+    dest: 'public/images/',
+}); // 이미지 업로드를 위한 multer 설정
 
 // URL-encoded 데이터 파싱을 위한 미들웨어 추가
 authRouter.use(express.urlencoded({ extended: true }));
@@ -26,52 +32,50 @@ authRouter.post('/signup', upload.single('profileImage'), async (req, res) => {
 
     // 필수 입력값 확인
     if (!email || !password || !passwordChecker || !nickname) {
-        return res
-            .status(400)
-            .json({ code: 4000, message: '유효하지 않은 요청입니다' });
+        throw new ErrorWrapper(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
     // 비밀번호가 Base64 인코딩인지 확인
     if (!/^[A-Za-z0-9+/=]+$/.test(password)) {
-        return res.status(400).json({
-            code: 4000,
-            message: '비밀번호는 Base64 인코딩 형식이어야 합니다',
-        });
+        throw new ErrorWrapper(
+            400,
+            4000,
+            '비밀번호는 Base64 인코딩 형식이어야 합니다',
+            null,
+        );
     }
 
     // 비밀번호 길이 확인
     const decodedPassword = Buffer.from(password, 'base64').toString('utf-8');
     if (decodedPassword.length < 8 || decodedPassword.length > 20) {
-        return res.status(400).json({
-            code: 4000,
-            message: '비밀번호는 8자 이상 20자 이하이어야 합니다',
-        });
+        throw new ErrorWrapper(
+            400,
+            4000,
+            '비밀번호는 8자 이상 20자 이하이어야 합니다',
+            null,
+        );
     }
 
     if (password !== passwordChecker) {
-        return res
-            .status(400)
-            .json({ code: 4000, message: '비밀번호가 일치하지 않습니다' });
+        throw new ErrorWrapper(400, 4000, '비밀번호가 일치하지 않습니다', null);
     }
 
     if (nickname.length < 1 || nickname.length > 10) {
-        return res.status(400).json({
-            code: 4000,
-            message: '닉네임은 1자 이상 10자 이하이어야 합니다',
-        });
+        throw new ErrorWrapper(
+            400,
+            4000,
+            '닉네임은 1자 이상 10자 이하이어야 합니다',
+            null,
+        );
     }
 
-    try {
-        const result = await authController.register(
-            email,
-            password,
-            nickname,
-            profileImage,
-        );
-        res.status(200).json(result);
-    } catch (errorResponse) {
-        res.status(200).json(errorResponse);
-    }
+    const result = await authController.register(
+        email,
+        password,
+        nickname,
+        profileImage,
+    );
+    res.status(200).json(result);
 });
 
 // 닉네임 중복 여부 조회
@@ -79,24 +83,20 @@ authRouter.get('/check-nickname', (req, res) => {
     const { nickname } = req.query;
 
     if (!nickname) {
-        return res
-            .status(400)
-            .json({ code: 4000, message: '유효하지 않은 요청입니다' });
+        throw new ErrorWrapper(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
     if (nickname.length < 1 || nickname.length > 10) {
-        return res.status(400).json({
-            code: 4000,
-            message: '닉네임은 1자 이상 10자 이하이어야 합니다',
-        });
+        throw new ErrorWrapper(
+            400,
+            4000,
+            '닉네임은 1자 이상 10자 이하이어야 합니다',
+            null,
+        );
     }
 
-    try {
-        const result = authController.checkNicknameAvailability(nickname);
-        res.status(200).json(result);
-    } catch (errorResponse) {
-        res.status(200).json(errorResponse);
-    }
+    const result = authController.checkNicknameAvailability(nickname);
+    res.status(200).json(result);
 });
 
 // 로그인
@@ -106,31 +106,26 @@ authRouter.post('/signin', upload.none(), async (req, res) => {
 
     // 필수 입력값 확인
     if (!email || !password || email.length === 0 || password.length === 0) {
-        return res
-            .status(400)
-            .json({ code: 4000, message: '유효하지 않은 요청입니다' });
+        throw new ErrorWrapper(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
     // 비밀번호가 Base64 인코딩인지 확인
     if (!/^[A-Za-z0-9+/=]+$/.test(password)) {
-        return res.status(400).json({
-            code: 4000,
-            message: '비밀번호는 Base64 인코딩 형식이어야 합니다',
-        });
+        throw new ErrorWrapper(
+            400,
+            4000,
+            '비밀번호는 Base64 인코딩 형식이어야 합니다',
+            null,
+        );
     }
 
-    try {
-        const result = await authController.login(
-            res,
-            sessionIdToRemove,
-            email,
-            password,
-        );
-        return res.status(200).json(result);
-    } catch (errorResponse) {
-        console.error(errorResponse);
-        res.status(200).json(errorResponse);
-    }
+    const result = await authController.login(
+        res,
+        sessionIdToRemove,
+        email,
+        password,
+    );
+    return res.status(200).json(result);
 });
 
 // 로그아웃
@@ -138,9 +133,7 @@ authRouter.post('/logout', (req, res) => {
     const sessionId = req.cookies.session_id;
 
     if (sessionId === undefined) {
-        return res
-            .status(401)
-            .json({ code: 4001, message: '인증이 필요합니다.', data: null });
+        throw new ErrorWrapper(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
     authController.logout(res, sessionId);
@@ -151,18 +144,12 @@ authRouter.delete('/withdrawal', (req, res) => {
     const sessionId = req.cookies.session_id;
 
     if (sessionId === undefined) {
-        return res
-            .status(401)
-            .json({ code: 4001, message: '인증이 필요합니다.', data: null });
+        throw new ErrorWrapper(401, 4001, '유효하지 않은 요청입니다', null);
     }
 
-    try {
-        const userId = getLoggedInUser(sessionId).id;
+    const userId = getLoggedInUser(sessionId).id;
 
-        authController.withdraw(res, sessionId, userId);
-    } catch (errorResponse) {
-        res.status(200).json(errorResponse);
-    }
+    authController.withdraw(res, sessionId, userId);
 });
 
 // client에서 로그인 여부 확인을 위한 API
@@ -170,10 +157,8 @@ authRouter.get('/isLoggedIn', (req, res) => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({
-            code: 4001,
-            message: '인증이 필요합니다.',
-            data: { isLoggedIn: false },
+        throw new ErrorWrapper(401, 4001, '인증이 필요합니다', {
+            isLoggedIn: false,
         });
     }
 

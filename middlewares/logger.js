@@ -4,7 +4,6 @@ import winston from 'winston';
 import dotenv from 'dotenv';
 dotenv.config();
 
-
 const { combine, timestamp, label, printf } = winston.format;
 
 const logFormat = printf(({ level, message, label, timestamp }) => {
@@ -20,11 +19,7 @@ const options = {
         maxSize: 5242880, // 5MB
         maxFiles: 5,
         colorize: false,
-        format: combine(
-            label({ label: 'server' }),
-            timestamp(),
-            logFormat,
-        ),
+        format: combine(label({ label: 'server' }), timestamp(), logFormat),
     },
     // 개발 시 console에 출력
     console: {
@@ -37,9 +32,7 @@ const options = {
 };
 
 const logger = new winston.createLogger({
-    transports: [
-        new winston.transports.File(options.file),
-    ],
+    transports: [new winston.transports.File(options.file)],
     exitOnError: false,
 });
 

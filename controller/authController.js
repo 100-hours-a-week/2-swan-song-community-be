@@ -1,8 +1,9 @@
 import 'express-async-errors';
 import bcrypt from 'bcryptjs';
 
-import { User } from '../model/user.js';
+import { ErrorWrapper } from '../module/errorWrapper.js';
 
+// DAO
 import { userDao } from '../dao/userDaos.js';
 import { postDao } from '../dao/postDaos.js';
 import { commentDao } from '../dao/commentDaos.js';
@@ -10,33 +11,28 @@ import { viewHistoryDao } from '../dao/viewHistoryDaos.js';
 import { postLikeDao } from '../dao/postLikeDaos.js';
 import { postController } from './postController.js';
 
+// Data Model
+import { User } from '../model/user.js';
+
 import {
     addSession,
     isLoggedIn,
     removeSession,
     removeSessionByUserId,
 } from '../module/authUtils.js';
+
 import { deleteImage, saveImage } from '../module/imageUtils.js';
 
 class AuthController {
     async register(email, password, nickname, profileImage) {
         if (userDao.findByEmail(email)) {
             if (profileImage) deleteImage(profileImage.path);
-
-            throw {
-                code: 4009,
-                message: '이미 가입된 이메일입니다',
-                data: null,
-            };
+            throw new ErrorWrapper(200, 4009, '이미 가입된 이메일입니다', null);
         }
 
         if (userDao.findByNickname(nickname)) {
             if (profileImage) deleteImage(profileImage.path);
-            throw {
-                code: 4009,
-                message: '닉네임이 중복되었습니다',
-                data: null,
-            };
+            throw new ErrorWrapper(200, 4009, '닉네임이 중복되었습니다', null);
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -62,11 +58,9 @@ class AuthController {
 
     checkNicknameAvailability(nickname) {
         if (userDao.findByNickname(nickname) !== undefined) {
-            throw {
-                code: 4009,
-                message: '닉네임이 중복되었습니다.',
-                data: { isAvailable: false },
-            };
+            throw new ErrorWrapper(200, 4009, '닉네임이 중복되었습니다', {
+                isAvailable: false,
+            });
         }
         return {
             code: 2000,
@@ -79,7 +73,7 @@ class AuthController {
         // 해당 사용자가 존재하는지, 비밀번호가 일치하는지 확인
         const user = await userDao.findByEmail(email);
         if (!user || !(await bcrypt.compare(password, user.password))) {
-            throw { code: 4001, message: '인증이 필요합니다.' };
+            throw new ErrorWrapper(200, 4001, '인증이 필요합니다.', null);
         }
 
         // 기존 세션에 저장된 로그인 기록 제거
@@ -92,14 +86,12 @@ class AuthController {
         const sessionId = addSession(user);
         const sessionOptions = {
             maxAge: 1000 * 60 * 60 * 24 * 7, // 7일
-            httpOnly: true,
-            sameSite: 'None',
-            secure: true,
+            sameSite: 'Strict',
+            secure: false,
         };
 
         res.cookie('session_id', sessionId, sessionOptions);
 
-        // 로그인 성공 시 세션에 사용자 정보 저장 (비밀번호 제외)
         return {
             code: 2000,
             message: '로그인 성공',
@@ -114,29 +106,25 @@ class AuthController {
     }
 
     async withdraw(res, sessionId, userId) {
-        try {
-            const posts = postDao.findAllByUserId(userId);
-            posts.forEach(post => {
-                postController.deletePost(post.id);
-            });
-            commentDao.deleteCommentsByUserId(userId);
-            postLikeDao.deleteAllByUserId(userId);
-            viewHistoryDao.deleteViewHistoriesByUserId(userId);
+        const posts = postDao.findAllByUserId(userId);
+        posts.forEach(post => {
+            postController.deletePost(post.id);
+        });
+        commentDao.deleteCommentsByUserId(userId);
+        postLikeDao.deleteAllByUserId(userId);
+        viewHistoryDao.deleteViewHistoriesByUserId(userId);
 
-            const user = userDao.findById(userId);
+        const user = userDao.findById(userId);
 
-            userDao.deleteUser(user);
+        userDao.deleteUser(user);
 
-            if (user.profileImageUrl) {
-                deleteImage(user.profileImageUrl);
-            }
-
-            removeSession(sessionId);
-            res.clearCookie('session_id');
-            res.status(204).end();
-        } catch (errorResponse) {
-            throw errorResponse;
+        if (user.profileImageUrl) {
+            deleteImage(user.profileImageUrl);
         }
+
+        removeSession(sessionId);
+        res.clearCookie('session_id');
+        res.status(204).end();
     }
 }
 

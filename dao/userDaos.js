@@ -1,6 +1,8 @@
 import { users, userJsonFilename, flush } from '../model/inMemoryDB.js';
 import { binarySearch } from '../dao/algorithm.js';
 
+import { ErrorWrapper } from '../module/errorWrapper.js';
+
 class IUserDao {
     constructor() {
         if (this.constructor === IUserDao) {
@@ -47,11 +49,12 @@ class InMemoryUserDao extends IUserDao {
         const userIdx = binarySearch(this.users, userId);
 
         if (userIdx === -1) {
-            throw {
-                code: 4004,
-                message: '사용자를 찾을 수 없습니다.',
-                data: null,
-            };
+            throw new ErrorWrapper(
+                200,
+                4004,
+                '사용자를 찾을 수 없습니다',
+                null,
+            );
         }
 
         return this.users[userIdx];

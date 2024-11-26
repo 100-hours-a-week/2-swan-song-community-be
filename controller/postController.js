@@ -1,5 +1,7 @@
 import 'express-async-errors';
 
+import { ErrorWrapper } from '../module/errorWrapper.js';
+
 // DAO
 import { postDao } from '../dao/postDaos.js';
 import { commentDao } from '../dao/commentDaos.js';
@@ -41,11 +43,12 @@ class PostController {
         const author = this.userDao.findById(post.authorId);
 
         if (!author) {
-            throw {
-                code: 4004,
-                message: '작성자를 찾을 수 없습니다',
-                data: null,
-            };
+            throw new ErrorWrapper(
+                400,
+                4004,
+                '작성자를 찾을 수 없습니다',
+                null,
+            );
         }
 
         const postComments = this.commentDao.findByPostId(post.id);
@@ -121,11 +124,12 @@ class PostController {
         };
 
         if (data.content.length === 0) {
-            return {
-                code: 4004,
-                message: '게시글이 존재하지 않습니다.',
-                data: data,
-            };
+            throw new ErrorWrapper(
+                200,
+                4004,
+                '게시글이 존재하지 않습니다',
+                data,
+            );
         }
 
         return {
@@ -146,10 +150,14 @@ class PostController {
         return { code: 2001, message: '성공', data: { postId: post.id } };
     }
 
-    async updatePost(postId, updatePostDto) {
+    async updatePost(postId, updatePostDto, userId) {
         const { title, content, contentImage, isRemoveImage } = updatePostDto;
 
         const currentPost = this.postDao.findById(postId);
+
+        if (currentPost.authorId !== userId) {
+            throw new ErrorWrapper(200, 4003, '권한이 없습니다', null);
+        }
 
         let contentImageUrl = currentPost.contentImageUrl;
 
@@ -172,8 +180,12 @@ class PostController {
         };
     }
 
-    deletePost(postId) {
+    deletePost(postId, userId) {
         const post = this.postDao.findById(postId);
+
+        if (post.authorId !== userId) {
+            throw new ErrorWrapper(200, 4003, '권한이 없습니다', null);
+        }
 
         const commentsToDelete = this.commentDao.findByPostId(post.id);
         commentsToDelete.forEach(c => {
@@ -203,11 +215,7 @@ class PostController {
         );
 
         if (postLike === true) {
-            throw {
-                code: 4009,
-                message: '이미 좋아요를 눌렀습니다',
-                data: null,
-            };
+            throw new ErrorWrapper(400, 4009, '이미 좋아요를 눌렀습니다', null);
         }
 
         const newPostLike = new PostLike(userId, post.id);
@@ -228,11 +236,12 @@ class PostController {
         );
 
         if (postLike === undefined) {
-            throw {
-                code: 4004,
-                message: '좋아요를 찾을 수 없습니다',
-                data: null,
-            };
+            throw new ErrorWrapper(
+                400,
+                4004,
+                '좋아요를 찾을 수 없습니다',
+                null,
+            );
         }
 
         this.postLikeDao.deletePostLike(postLike);
@@ -276,7 +285,13 @@ class PostController {
         };
     }
 
-    deletePostComment(commentId) {
+    deletePostComment(commentId, userId) {
+        const comment = this.commentDao.findById(commentId);
+
+        if (comment.authorId !== userId) {
+            throw new ErrorWrapper(200, 4003, '권한이 없습니다', null);
+        }
+
         this.commentDao.deleteComment(commentId);
     }
 }

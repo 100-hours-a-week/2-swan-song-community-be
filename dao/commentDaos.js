@@ -1,6 +1,8 @@
 import { comments, commentJsonFilename, flush } from '../model/inMemoryDB.js';
 import { binarySearch } from '../dao/algorithm.js';
 
+import { ErrorWrapper } from '../module/errorWrapper.js';
+
 class ICommentDao {
     constructor() {
         if (this.constructor === ICommentDao) {
@@ -47,11 +49,7 @@ class InMemoryCommentDao extends ICommentDao {
         const commentId = binarySearch(this.comments, id);
 
         if (commentId === -1) {
-            throw {
-                code: 4004,
-                message: '댓글을 찾을 수 없습니다',
-                data: null,
-            };
+            throw new ErrorWrapper(200, 4004, '댓글을 찾을 수 없습니다', null);
         }
 
         return this.comments[commentId];
@@ -82,11 +80,7 @@ class InMemoryCommentDao extends ICommentDao {
         const commentIdx = binarySearch(this.comments, commentId);
 
         if (commentIdx === -1) {
-            throw {
-                code: 4004,
-                message: '댓글을 찾을 수 없습니다',
-                data: null,
-            };
+            throw new ErrorWrapper(200, 4004, '댓글을 찾을 수 없습니다', null);
         }
 
         this.comments.splice(commentIdx, 1);

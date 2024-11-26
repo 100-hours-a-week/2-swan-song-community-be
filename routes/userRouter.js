@@ -2,9 +2,14 @@
 
 import express from 'express';
 import 'express-async-errors';
-import { userController } from '../controller/userController.js';
+
+import { ErrorWrapper } from '../module/errorWrapper.js';
+
 import multer from 'multer';
 import cookieParser from 'cookie-parser';
+
+import { userController } from '../controller/userController.js';
+
 import { getLoggedInUser, isLoggedIn } from '../module/authUtils.js';
 
 const userRouter = express.Router();
@@ -22,11 +27,7 @@ const checkAuthorization = (req, res, next) => {
     const sessionId = req.cookies.session_id;
 
     if (!isLoggedIn(sessionId)) {
-        return res.status(401).json({
-            code: 4001,
-            message: '인증 정보가 필요합니다.',
-            data: null,
-        });
+        throw new ErrorWrapper(401, 4001, '인증 정보가 필요합니다.', null);
     }
     next(); // 인증된 경우 다음 미들웨어 또는 라우트로 진행
 };
@@ -34,18 +35,13 @@ const checkAuthorization = (req, res, next) => {
 // 모든 라우트에 인가 미들웨어 적용
 userRouter.use(checkAuthorization);
 
-// 회원가입
+// 내 정보 조회
 userRouter.get('/me', async (req, res) => {
     const sessionId = req.cookies.session_id;
     const user = getLoggedInUser(sessionId);
 
-    try {
-        const result = userController.findUserInfo(user.id);
-
-        res.status(200).json(result);
-    } catch (errorResponse) {
-        res.status(200).json(errorResponse);
-    }
+    const result = userController.findUserInfo(user.id);
+    res.status(200).json(result);
 });
 
 // 회원정보 수정
@@ -61,23 +57,15 @@ userRouter.put('/me', upload.single('profileImage'), async (req, res) => {
         isProfileImageRemoved === false &&
         !profileImage
     ) {
-        return res.status(400).json({
-            code: 4000,
-            message: '유효하지 않은 요청입니다.',
-            data: null,
-        });
+        throw new ErrorWrapper(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
-    try {
-        const result = await userController.updateUser(user.id, {
-            nickname,
-            isProfileImageRemoved,
-            profileImage,
-        });
-        res.status(200).json(result);
-    } catch (errorResponse) {
-        res.status(200).json(errorResponse);
-    }
+    const result = await userController.updateUser(user.id, {
+        nickname,
+        isProfileImageRemoved,
+        profileImage,
+    });
+    res.status(200).json(result);
 });
 
 userRouter.patch('/me/password', upload.none(), async (req, res) => {
@@ -91,10 +79,12 @@ userRouter.patch('/me/password', upload.none(), async (req, res) => {
         !/^[A-Za-z0-9+/=]+$/.test(newPassword) ||
         !/^[A-Za-z0-9+/=]+$/.test(passwordCheck)
     ) {
-        return res.status(400).json({
-            code: 4000,
-            message: '비밀번호는 Base64 인코딩 형식이어야 합니다',
-        });
+        throw new ErrorWrapper(
+            400,
+            4000,
+            '비밀번호는 Base64 인코딩 형식이어야 합니다',
+            null,
+        );
     }
 
     // 비밀번호 길이 확인
@@ -102,21 +92,19 @@ userRouter.patch('/me/password', upload.none(), async (req, res) => {
         'utf-8',
     );
     if (decodedPassword.length < 8 || decodedPassword.length > 20) {
-        return res.status(400).json({
-            code: 4000,
-            message: '비밀번호는 8자 이상 20자 이하이어야 합니다',
-        });
+        throw new ErrorWrapper(
+            400,
+            4000,
+            '비밀번호는 8자 이상 20자 이하이어야 합니다',
+            null,
+        );
     }
 
-    try {
-        const result = await userController.updateUserPassword(user.id, {
-            newPassword: newPassword,
-            passwordCheck: passwordCheck,
-        });
-        res.status(200).json(result);
-    } catch (errorResponse) {
-        res.status(200).json(errorResponse);
-    }
+    const result = await userController.updateUserPassword(user.id, {
+        newPassword: newPassword,
+        passwordCheck: passwordCheck,
+    });
+    res.status(200).json(result);
 });
 
 export default userRouter;
