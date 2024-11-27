@@ -1,7 +1,7 @@
 import express from 'express';
 import 'express-async-errors';
 
-import logger from './middlewares/logger.js';
+import logger from './utils/logger.js';
 import dotenv from 'dotenv';
 
 import bodyParser from 'body-parser';

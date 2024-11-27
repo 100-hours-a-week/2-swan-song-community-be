@@ -4,7 +4,7 @@ import 'express-async-errors';
 import fs from 'fs';
 import path from 'path';
 
-import logger from '../middlewares/logger.js';
+import logger from '../utils/logger.js';
 
 import { ErrorWrapper } from '../module/errorWrapper.js';
 
