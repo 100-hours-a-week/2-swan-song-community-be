@@ -1,7 +1,7 @@
 import 'express-async-errors';
 import bcrypt from 'bcryptjs';
 
-import { ErrorWrapper } from '../module/errorWrapper.js';
+import { ErrorResponse } from '../dto/errorResponse.js';
 
 import { userDao } from '../dao/userDaos.js';
 
@@ -39,7 +39,7 @@ class UserController {
             user.nickname !== nickname &&
             this.userDao.findByNickname(nickname)
         ) {
-            throw new ErrorWrapper(
+            throw new ErrorResponse(
                 200,
                 4009,
                 '이미 사용 중인 닉네임입니다',
@@ -79,7 +79,7 @@ class UserController {
         const { newPassword, passwordCheck } = updateUserPasswordDto;
 
         if (newPassword !== passwordCheck) {
-            throw new ErrorWrapper(
+            throw new ErrorResponse(
                 200,
                 4000,
                 '비밀번호가 일치하지 않습니다',

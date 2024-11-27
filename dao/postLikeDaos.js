@@ -1,6 +1,6 @@
 import { likes, likeJsonFilename, flush } from '../model/inMemoryDB.js';
 
-import { ErrorWrapper } from '../module/errorWrapper.js';
+import { ErrorResponse } from '../dto/errorResponse.js';
 
 class IPostLikeDao {
     constructor() {
@@ -48,7 +48,7 @@ class InMemoryPostLikeDao extends IPostLikeDao {
         const postLikeId = this.postLikes.indexOf(c => c.id === id);
 
         if (postLikeId === -1) {
-            throw new ErrorWrapper(200, 4004, '댓글을 찾을 수 없습니다', null);
+            throw new ErrorResponse(200, 4004, '댓글을 찾을 수 없습니다', null);
         }
 
         return this.postLikes[postLikeId];
@@ -80,7 +80,7 @@ class InMemoryPostLikeDao extends IPostLikeDao {
         const postLikeIdx = this.postLikes.indexOf(postLike);
 
         if (postLikeIdx === -1) {
-            throw new ErrorWrapper(200, 4004, '댓글을 찾을 수 없습니다', null);
+            throw new ErrorResponse(200, 4004, '댓글을 찾을 수 없습니다', null);
         }
 
         this.postLikes.splice(postLikeIdx, 1);

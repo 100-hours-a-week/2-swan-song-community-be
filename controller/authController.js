@@ -1,7 +1,7 @@
 import 'express-async-errors';
 import bcrypt from 'bcryptjs';
 
-import { ErrorWrapper } from '../module/errorWrapper.js';
+import { ErrorResponse } from '../dto/errorResponse.js';
 
 // DAO
 import { userDao } from '../dao/userDaos.js';
@@ -27,12 +27,12 @@ class AuthController {
     async register(email, password, nickname, profileImage) {
         if (userDao.findByEmail(email)) {
             if (profileImage) deleteImage(profileImage.path);
-            throw new ErrorWrapper(200, 4009, '이미 가입된 이메일입니다', null);
+            throw new ErrorResponse(200, 4009, '이미 가입된 이메일입니다', null);
         }
 
         if (userDao.findByNickname(nickname)) {
             if (profileImage) deleteImage(profileImage.path);
-            throw new ErrorWrapper(200, 4009, '닉네임이 중복되었습니다', null);
+            throw new ErrorResponse(200, 4009, '닉네임이 중복되었습니다', null);
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -58,7 +58,7 @@ class AuthController {
 
     checkNicknameAvailability(nickname) {
         if (userDao.findByNickname(nickname) !== undefined) {
-            throw new ErrorWrapper(200, 4009, '닉네임이 중복되었습니다', {
+            throw new ErrorResponse(200, 4009, '닉네임이 중복되었습니다', {
                 isAvailable: false,
             });
         }
@@ -73,7 +73,7 @@ class AuthController {
         // 해당 사용자가 존재하는지, 비밀번호가 일치하는지 확인
         const user = await userDao.findByEmail(email);
         if (!user || !(await bcrypt.compare(password, user.password))) {
-            throw new ErrorWrapper(200, 4001, '인증이 필요합니다.', null);
+            throw new ErrorResponse(200, 4001, '인증이 필요합니다.', null);
         }
 
         // 기존 세션에 저장된 로그인 기록 제거

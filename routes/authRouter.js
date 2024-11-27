@@ -3,7 +3,7 @@
 import express from 'express';
 import 'express-async-errors';
 
-import { ErrorWrapper } from '../module/errorWrapper.js';
+import { ErrorResponse } from '../dto/errorResponse.js';
 
 import multer from 'multer';
 import cookieParser from 'cookie-parser';
@@ -32,12 +32,12 @@ authRouter.post('/signup', upload.single('profileImage'), async (req, res) => {
 
     // 필수 입력값 확인
     if (!email || !password || !passwordChecker || !nickname) {
-        throw new ErrorWrapper(400, 4000, '유효하지 않은 요청입니다', null);
+        throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
     // 비밀번호가 Base64 인코딩인지 확인
     if (!/^[A-Za-z0-9+/=]+$/.test(password)) {
-        throw new ErrorWrapper(
+        throw new ErrorResponse(
             400,
             4000,
             '비밀번호는 Base64 인코딩 형식이어야 합니다',
@@ -48,7 +48,7 @@ authRouter.post('/signup', upload.single('profileImage'), async (req, res) => {
     // 비밀번호 길이 확인
     const decodedPassword = Buffer.from(password, 'base64').toString('utf-8');
     if (decodedPassword.length < 8 || decodedPassword.length > 20) {
-        throw new ErrorWrapper(
+        throw new ErrorResponse(
             400,
             4000,
             '비밀번호는 8자 이상 20자 이하이어야 합니다',
@@ -57,11 +57,11 @@ authRouter.post('/signup', upload.single('profileImage'), async (req, res) => {
     }
 
     if (password !== passwordChecker) {
-        throw new ErrorWrapper(400, 4000, '비밀번호가 일치하지 않습니다', null);
+        throw new ErrorResponse(400, 4000, '비밀번호가 일치하지 않습니다', null);
     }
 
     if (nickname.length < 1 || nickname.length > 10) {
-        throw new ErrorWrapper(
+        throw new ErrorResponse(
             400,
             4000,
             '닉네임은 1자 이상 10자 이하이어야 합니다',
@@ -83,11 +83,11 @@ authRouter.get('/check-nickname', (req, res) => {
     const { nickname } = req.query;
 
     if (!nickname) {
-        throw new ErrorWrapper(400, 4000, '유효하지 않은 요청입니다', null);
+        throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
     if (nickname.length < 1 || nickname.length > 10) {
-        throw new ErrorWrapper(
+        throw new ErrorResponse(
             400,
             4000,
             '닉네임은 1자 이상 10자 이하이어야 합니다',
@@ -106,12 +106,12 @@ authRouter.post('/signin', upload.none(), async (req, res) => {
 
     // 필수 입력값 확인
     if (!email || !password || email.length === 0 || password.length === 0) {
-        throw new ErrorWrapper(400, 4000, '유효하지 않은 요청입니다', null);
+        throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
     // 비밀번호가 Base64 인코딩인지 확인
     if (!/^[A-Za-z0-9+/=]+$/.test(password)) {
-        throw new ErrorWrapper(
+        throw new ErrorResponse(
             400,
             4000,
             '비밀번호는 Base64 인코딩 형식이어야 합니다',
@@ -133,7 +133,7 @@ authRouter.post('/logout', (req, res) => {
     const sessionId = req.cookies.session_id;
 
     if (sessionId === undefined) {
-        throw new ErrorWrapper(400, 4000, '유효하지 않은 요청입니다', null);
+        throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
     authController.logout(res, sessionId);
@@ -144,7 +144,7 @@ authRouter.delete('/withdrawal', (req, res) => {
     const sessionId = req.cookies.session_id;
 
     if (sessionId === undefined) {
-        throw new ErrorWrapper(401, 4001, '유효하지 않은 요청입니다', null);
+        throw new ErrorResponse(401, 4001, '유효하지 않은 요청입니다', null);
     }
 
     const userId = getLoggedInUser(sessionId).id;
@@ -157,7 +157,7 @@ authRouter.get('/isLoggedIn', (req, res) => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        throw new ErrorWrapper(401, 4001, '인증이 필요합니다', {
+        throw new ErrorResponse(401, 4001, '인증이 필요합니다', {
             isLoggedIn: false,
         });
     }

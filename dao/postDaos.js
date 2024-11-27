@@ -1,7 +1,7 @@
 import { posts, postJsonFilename, flush } from '../model/inMemoryDB.js';
 import { binarySearch } from '../dao/algorithm.js';
 
-import { ErrorWrapper } from '../module/errorWrapper.js';
+import { ErrorResponse } from '../dto/errorResponse.js';
 
 class IPostDao {
     constructor() {
@@ -47,7 +47,7 @@ class InMemoryPostDao extends IPostDao {
         const postId = binarySearch(this.posts, id);
 
         if (postId === -1) {
-            throw new ErrorWrapper(
+            throw new ErrorResponse(
                 200,
                 4004,
                 '포스트를 찾을 수 없습니다',

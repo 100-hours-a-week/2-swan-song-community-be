@@ -3,7 +3,7 @@
 import express from 'express';
 import 'express-async-errors';
 
-import { ErrorWrapper } from '../module/errorWrapper.js';
+import { ErrorResponse } from '../dto/errorResponse.js';
 
 import multer from 'multer';
 import cookieParser from 'cookie-parser';
@@ -27,7 +27,7 @@ const checkAuthorization = (req, res, next) => {
     const sessionId = req.cookies.session_id;
 
     if (!isLoggedIn(sessionId)) {
-        throw new ErrorWrapper(401, 4001, '인증 정보가 필요합니다.', null);
+        throw new ErrorResponse(401, 4001, '인증 정보가 필요합니다.', null);
     }
     next(); // 인증된 경우 다음 미들웨어 또는 라우트로 진행
 };
@@ -57,7 +57,7 @@ userRouter.put('/me', upload.single('profileImage'), async (req, res) => {
         isProfileImageRemoved === false &&
         !profileImage
     ) {
-        throw new ErrorWrapper(400, 4000, '유효하지 않은 요청입니다', null);
+        throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
     const result = await userController.updateUser(user.id, {
@@ -79,7 +79,7 @@ userRouter.patch('/me/password', upload.none(), async (req, res) => {
         !/^[A-Za-z0-9+/=]+$/.test(newPassword) ||
         !/^[A-Za-z0-9+/=]+$/.test(passwordCheck)
     ) {
-        throw new ErrorWrapper(
+        throw new ErrorResponse(
             400,
             4000,
             '비밀번호는 Base64 인코딩 형식이어야 합니다',
@@ -92,7 +92,7 @@ userRouter.patch('/me/password', upload.none(), async (req, res) => {
         'utf-8',
     );
     if (decodedPassword.length < 8 || decodedPassword.length > 20) {
-        throw new ErrorWrapper(
+        throw new ErrorResponse(
             400,
             4000,
             '비밀번호는 8자 이상 20자 이하이어야 합니다',

@@ -3,7 +3,7 @@
 import express from 'express';
 import 'express-async-errors';
 
-import { ErrorWrapper } from '../module/errorWrapper.js';
+import { ErrorResponse } from '../dto/errorResponse.js';
 
 import multer from 'multer';
 import cookieParser from 'cookie-parser';
@@ -27,7 +27,7 @@ const checkAuthorization = (req, res, next) => {
     const sessionId = req.cookies.session_id;
 
     if (!isLoggedIn(sessionId)) {
-        throw new ErrorWrapper(401, 4001, '인증 정보가 필요합니다.', null);
+        throw new ErrorResponse(401, 4001, '인증 정보가 필요합니다.', null);
     }
     next(); // 인증된 경우 다음 미들웨어 또는 라우트로 진행
 };
@@ -47,7 +47,7 @@ postRouter.get('/:postId', async (req, res) => {
         postId < 1 ||
         (commentFlag !== 'y' && commentFlag !== 'n')
     ) {
-        throw new ErrorWrapper(400, 4000, '유효하지 않은 요청입니다', null);
+        throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
     const result = postController.findDetailPostInfo(
@@ -69,7 +69,7 @@ postRouter.get('/', async (req, res) => {
         size < 0 ||
         (lastId !== null && (isNaN(lastId) || lastId < 1))
     ) {
-        throw new ErrorWrapper(400, 4000, '유효하지 않은 요청입니다', null);
+        throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
     const result = postController.findAllSummaryPostInfo(size, lastId);
@@ -83,7 +83,7 @@ postRouter.post('/comments', async (req, res) => {
     const user = getLoggedInUser(req.cookies.session_id);
 
     if (!postId || !content) {
-        throw new ErrorWrapper(400, 4000, '유효하지 않은 요청입니다', null);
+        throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
     const result = postController.createPostComment({
@@ -101,7 +101,7 @@ postRouter.put('/comments', async (req, res) => {
     const user = getLoggedInUser(req.cookies.session_id);
 
     if (!content || isNaN(commentId) || commentId < 1) {
-        throw new ErrorWrapper(400, 4000, '유효하지 않은 요청입니다', null);
+        throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
     const result = postController.updatePostComment(commentId, content, user);
@@ -114,7 +114,7 @@ postRouter.delete('/comments', async (req, res) => {
     const user = getLoggedInUser(req.cookies.session_id);
 
     if (isNaN(commentId) || commentId < 1) {
-        throw new ErrorWrapper(400, 4000, '유효하지 않은 요청입니다', null);
+        throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
     postController.deletePostComment(commentId, user.id);
@@ -127,7 +127,7 @@ postRouter.post('/likes', async (req, res) => {
     const user = getLoggedInUser(req.cookies.session_id);
 
     if (!postId) {
-        throw new ErrorWrapper(400, 4000, '유효하지 않은 요청입니다', null);
+        throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
     const result = postController.createPostLike(user.id, postId);
@@ -140,7 +140,7 @@ postRouter.delete('/likes', async (req, res) => {
     const user = getLoggedInUser(req.cookies.session_id);
 
     if (!postId) {
-        throw new ErrorWrapper(400, 4000, '유효하지 않은 요청입니다', null);
+        throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
     postController.deletePostLike(user.id, postId);
@@ -154,7 +154,7 @@ postRouter.post('/', upload.single('postImage'), async (req, res) => {
     const user = getLoggedInUser(req.cookies.session_id);
 
     if (!title || !content) {
-        throw new ErrorWrapper(400, 4000, '유효하지 않은 요청입니다', null);
+        throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
     const result = await postController.createPost({
@@ -176,7 +176,7 @@ postRouter.put('/:postId', upload.single('postImage'), async (req, res) => {
     const user = getLoggedInUser(req.cookies.session_id);
 
     if (!title || !content || isNaN(postId) || postId < 1) {
-        throw new ErrorWrapper(400, 4000, '유효하지 않은 요청입니다', null);
+        throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
     const result = await postController.updatePost(
@@ -199,7 +199,7 @@ postRouter.delete('/:postId', async (req, res) => {
     const user = getLoggedInUser(req.cookies.session_id);
 
     if (isNaN(postId) || postId < 1) {
-        throw new ErrorWrapper(400, 4000, '유효하지 않은 요청입니다', null);
+        throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
     postController.deletePost(postId, user.id);

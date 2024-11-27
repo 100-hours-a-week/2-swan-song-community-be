@@ -1,6 +1,6 @@
 import 'express-async-errors';
 
-import { ErrorWrapper } from '../module/errorWrapper.js';
+import { ErrorResponse } from '../dto/errorResponse.js';
 
 // DAO
 import { postDao } from '../dao/postDaos.js';
@@ -43,7 +43,7 @@ class PostController {
         const author = this.userDao.findById(post.authorId);
 
         if (!author) {
-            throw new ErrorWrapper(
+            throw new ErrorResponse(
                 400,
                 4004,
                 '작성자를 찾을 수 없습니다',
@@ -124,7 +124,7 @@ class PostController {
         };
 
         if (data.content.length === 0) {
-            throw new ErrorWrapper(
+            throw new ErrorResponse(
                 200,
                 4004,
                 '게시글이 존재하지 않습니다',
@@ -156,7 +156,7 @@ class PostController {
         const currentPost = this.postDao.findById(postId);
 
         if (currentPost.authorId !== userId) {
-            throw new ErrorWrapper(200, 4003, '권한이 없습니다', null);
+            throw new ErrorResponse(200, 4003, '권한이 없습니다', null);
         }
 
         let contentImageUrl = currentPost.contentImageUrl;
@@ -184,7 +184,7 @@ class PostController {
         const post = this.postDao.findById(postId);
 
         if (post.authorId !== userId) {
-            throw new ErrorWrapper(200, 4003, '권한이 없습니다', null);
+            throw new ErrorResponse(200, 4003, '권한이 없습니다', null);
         }
 
         const commentsToDelete = this.commentDao.findByPostId(post.id);
@@ -215,7 +215,7 @@ class PostController {
         );
 
         if (postLike === true) {
-            throw new ErrorWrapper(400, 4009, '이미 좋아요를 눌렀습니다', null);
+            throw new ErrorResponse(400, 4009, '이미 좋아요를 눌렀습니다', null);
         }
 
         const newPostLike = new PostLike(userId, post.id);
@@ -236,7 +236,7 @@ class PostController {
         );
 
         if (postLike === undefined) {
-            throw new ErrorWrapper(
+            throw new ErrorResponse(
                 400,
                 4004,
                 '좋아요를 찾을 수 없습니다',
@@ -289,7 +289,7 @@ class PostController {
         const comment = this.commentDao.findById(commentId);
 
         if (comment.authorId !== userId) {
-            throw new ErrorWrapper(200, 4003, '권한이 없습니다', null);
+            throw new ErrorResponse(200, 4003, '권한이 없습니다', null);
         }
 
         this.commentDao.deleteComment(commentId);
