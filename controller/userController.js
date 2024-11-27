@@ -39,7 +39,7 @@ class UserController {
             user.nickname !== nickname &&
             this.userDao.findByNickname(nickname)
         ) {
-            throw ErrorWrapper(200, 4009, '이미 사용 중인 닉네임입니다', null);
+            throw new ErrorWrapper(200, 4009, '이미 사용 중인 닉네임입니다', null);
         }
 
         let profileImageUrl = user.profileImageUrl;
