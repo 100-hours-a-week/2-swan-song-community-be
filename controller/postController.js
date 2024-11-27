@@ -18,6 +18,7 @@ import { ViewHistory } from '../model/viewHistory.js';
 import { PostLike } from '../model/postLike.js';
 
 import { saveImage, deleteImage } from '../utils/imageUtils.js';
+import { formatDateTime } from '../utils/datetimeUtils.js';
 
 class PostController {
     constructor(postDao, commentDao, viewHistoryDao, userDao, postLikeDao) {
@@ -69,7 +70,7 @@ class PostController {
             likeCount: postLikeDao.findByPostId(post.id).length,
             viewCount: this.viewHistoryDao.countViewHistoriesByPostId(post.id),
             commentCount: postComments.length,
-            createdDateTime: post.createdDateTime,
+            createdDateTime: formatDateTime(post.createdDateTime),
         };
 
         // commentFlag에 따라 댓글 포함 여부 결정
@@ -80,7 +81,7 @@ class PostController {
                 return {
                     commentId: c.id,
                     content: c.content,
-                    createdDateTime: c.createdDateTime,
+                    createdDateTime: formatDateTime(c.createdDateTime),
                     author: {
                         id: author.id,
                         name: author.nickname,
@@ -113,7 +114,7 @@ class PostController {
                 likeCount: this.postLikeDao.findByPostId(p.id).length,
                 commentCount: this.commentDao.findByPostId(p.id).length,
                 viewCount: this.viewHistoryDao.countViewHistoriesByPostId(p.id),
-                createdDateTime: p.createdDateTime,
+                createdDateTime: formatDateTime(p.createdDateTime),
                 authorName: author.nickname,
                 profileImageUrl: author.profileImageUrl,
             };
