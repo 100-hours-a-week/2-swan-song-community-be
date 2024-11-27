@@ -133,7 +133,7 @@ authRouter.post('/logout', (req, res) => {
     const sessionId = req.cookies.session_id;
 
     if (sessionId === undefined) {
-        throw new ErrorWrapper(400, 4000, '유효하지 않은 요청입니다', null);
+        throw new ErrorWrapper(401, 4001, '인증이 필요합니다', null);
     }
 
     authController.logout(res, sessionId);
@@ -144,7 +144,7 @@ authRouter.delete('/withdrawal', (req, res) => {
     const sessionId = req.cookies.session_id;
 
     if (sessionId === undefined) {
-        throw new ErrorWrapper(401, 4001, '유효하지 않은 요청입니다', null);
+        throw new ErrorWrapper(401, 4001, '인증이 필요합니다', null);
     }
 
     const userId = getLoggedInUser(sessionId).id;
