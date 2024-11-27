@@ -9,6 +9,7 @@ import { ErrorResponse } from '../dto/errorResponse.js';
 import { userDao } from '../dao/userDaos.js';
 
 import { saveImage, deleteImage } from '../utils/imageUtils.js';
+import { formatDateTime } from '../utils/datetimeUtils.js';
 
 class UserController {
     constructor(userDao) {
@@ -23,7 +24,7 @@ class UserController {
             email: user.email,
             nickname: user.nickname,
             profileImageUrl: user.profileImageUrl,
-            createdDateTime: user.createdDateTime,
+            createdDateTime: formatDateTime(user.createdDateTime),
         };
         return new ApiResponse(200, 2000, '사용자 정보 조회 성공', data);
     }
