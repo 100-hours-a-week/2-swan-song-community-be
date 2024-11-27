@@ -19,9 +19,9 @@ import {
     isLoggedIn,
     removeSession,
     removeSessionByUserId,
-} from '../module/authUtils.js';
+} from '../utils/authUtils.js';
 
-import { deleteImage, saveImage } from '../module/imageUtils.js';
+import { deleteImage, saveImage } from '../utils/imageUtils.js';
 
 class AuthController {
     async register(email, password, nickname, profileImage) {

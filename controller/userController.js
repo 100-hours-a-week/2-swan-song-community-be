@@ -5,7 +5,7 @@ import { ErrorWrapper } from '../module/errorWrapper.js';
 
 import { userDao } from '../dao/userDaos.js';
 
-import { saveImage, deleteImage } from '../module/imageUtils.js';
+import { saveImage, deleteImage } from '../utils/imageUtils.js';
 
 class UserController {
     constructor(userDao) {

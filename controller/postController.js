@@ -15,7 +15,7 @@ import { Comment } from '../model/comment.js';
 import { ViewHistory } from '../model/viewHistory.js';
 import { PostLike } from '../model/postLike.js';
 
-import { saveImage, deleteImage } from '../module/imageUtils.js';
+import { saveImage, deleteImage } from '../utils/imageUtils.js';
 
 class PostController {
     constructor(postDao, commentDao, viewHistoryDao, userDao, postLikeDao) {

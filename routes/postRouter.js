@@ -10,7 +10,7 @@ import cookieParser from 'cookie-parser';
 
 import { postController } from '../controller/postController.js';
 
-import { getLoggedInUser, isLoggedIn } from '../module/authUtils.js';
+import { getLoggedInUser, isLoggedIn } from '../utils/authUtils.js';
 
 const postRouter = express.Router();
 const upload = multer({ dest: 'public/images/' }); // 이미지 업로드를 위한 multer 설정

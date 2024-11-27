@@ -10,7 +10,7 @@ import cookieParser from 'cookie-parser';
 
 import { authController } from '../controller/authController.js';
 
-import { getLoggedInUser, isLoggedIn } from '../module/authUtils.js';
+import { getLoggedInUser, isLoggedIn } from '../utils/authUtils.js';
 
 const authRouter = express.Router();
 const upload = multer({
