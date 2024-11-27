@@ -138,7 +138,7 @@ authRouter.post('/logout', (req, res) => {
     const sessionId = req.cookies.session_id;
 
     if (sessionId === undefined) {
-        throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
+        throw new ErrorWrapper(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
     const apiResponse = authController.logout(res, sessionId);
