@@ -1,1 +1,10 @@
-[]
+[
+    {
+        "id": 3,
+        "email": "test@test.test",
+        "nickname": "test1",
+        "password": "$2a$10$9xoFUTmTyT56cDq61wjjBu9dGDZSB2pgn9DJcxJLWxdfpqxGd8IGW",
+        "profileImageUrl": "/images/8afa345a8d50a9fa112f6b98624cbef7.png",
+        "createdDateTime": "2024-11-27T19:18:57.134Z"
+    }
+]

@@ -57,7 +57,12 @@ authRouter.post('/signup', upload.single('profileImage'), async (req, res) => {
     }
 
     if (password !== passwordChecker) {
-        throw new ErrorResponse(400, 4000, '비밀번호가 일치하지 않습니다', null);
+        throw new ErrorResponse(
+            400,
+            4000,
+            '비밀번호가 일치하지 않습니다',
+            null,
+        );
     }
 
     if (nickname.length < 1 || nickname.length > 10) {

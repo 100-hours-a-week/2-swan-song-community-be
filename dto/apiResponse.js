@@ -5,12 +5,16 @@ export class ApiResponse {
         this.code = businessCode || null;
         this.message = message || null;
         this.data = data || null;
-    };
+    }
 
     resolve(res) {
         if (this.httpStatus === 204) {
             return res.status(this.httpStatus).end();
         }
-        res.status(this.httpStatus).json({ code: this.code, message: this.message, data: this.data });
+        res.status(this.httpStatus).json({
+            code: this.code,
+            message: this.message,
+            data: this.data,
+        });
     }
 }

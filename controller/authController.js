@@ -29,7 +29,12 @@ class AuthController {
     async register(email, password, nickname, profileImage) {
         if (userDao.findByEmail(email)) {
             if (profileImage) deleteImage(profileImage.path);
-            throw new ErrorResponse(200, 4009, '이미 가입된 이메일입니다', null);
+            throw new ErrorResponse(
+                200,
+                4009,
+                '이미 가입된 이메일입니다',
+                null,
+            );
         }
 
         if (userDao.findByNickname(nickname)) {
@@ -61,7 +66,7 @@ class AuthController {
                 isAvailable: false,
             });
         }
-        
+
         const data = { isAvailable: true };
         return new ApiResponse(200, 2000, '사용 가능한 닉네임입니다', data);
     }
@@ -119,7 +124,7 @@ class AuthController {
 
         removeSession(sessionId);
         res.clearCookie('session_id');
-        
+
         return new ApiResponse(204);
     }
 }

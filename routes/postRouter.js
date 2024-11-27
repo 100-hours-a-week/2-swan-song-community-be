@@ -104,7 +104,11 @@ postRouter.put('/comments', async (req, res) => {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
-    const apiResponse = postController.updatePostComment(commentId, content, user);
+    const apiResponse = postController.updatePostComment(
+        commentId,
+        content,
+        user,
+    );
     apiResponse.resolve(res);
 });
 

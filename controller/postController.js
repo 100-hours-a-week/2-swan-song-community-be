@@ -90,7 +90,12 @@ class PostController {
             });
         }
 
-        return new ApiResponse(200, 2000, '게시글 상세 정보 단건 조회 성공', data);
+        return new ApiResponse(
+            200,
+            2000,
+            '게시글 상세 정보 단건 조회 성공',
+            data,
+        );
     }
 
     findAllSummaryPostInfo(queriedSize, queriedLastId) {
@@ -130,7 +135,12 @@ class PostController {
             );
         }
 
-        return new ApiResponse(200, 2000, '게시글 요약 정보 전체 조회 성공', data);
+        return new ApiResponse(
+            200,
+            2000,
+            '게시글 요약 정보 전체 조회 성공',
+            data,
+        );
     }
 
     async createPost(postDto) {
@@ -207,7 +217,12 @@ class PostController {
         );
 
         if (postLike === true) {
-            throw new ErrorResponse(400, 4009, '이미 좋아요를 눌렀습니다', null);
+            throw new ErrorResponse(
+                400,
+                4009,
+                '이미 좋아요를 눌렀습니다',
+                null,
+            );
         }
 
         const newPostLike = new PostLike(userId, post.id);
