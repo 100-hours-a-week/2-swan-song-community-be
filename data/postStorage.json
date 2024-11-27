@@ -1,18 +1,1 @@
-[
-    {
-        "id": 1,
-        "title": "나는나너는너",
-        "content": "내용은 없어",
-        "contentImageUrl": null,
-        "authorId": 3,
-        "createdDateTime": "2024-11-27T19:20:56.545Z"
-    },
-    {
-        "id": 2,
-        "title": "fd",
-        "content": "adfd",
-        "contentImageUrl": null,
-        "authorId": 3,
-        "createdDateTime": "2024-11-27T19:20:57.684Z"
-    }
-]
+[]
