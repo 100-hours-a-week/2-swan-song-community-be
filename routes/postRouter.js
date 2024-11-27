@@ -50,12 +50,12 @@ postRouter.get('/:postId', async (req, res) => {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
-    const result = postController.findDetailPostInfo(
+    const apiResponse = postController.findDetailPostInfo(
         postId,
         commentFlag,
         user.id,
     );
-    return res.status(200).json(result);
+    apiResponse.resolve(res);
 });
 
 // 게시글 요약 정보 조회
@@ -72,8 +72,8 @@ postRouter.get('/', async (req, res) => {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
-    const result = postController.findAllSummaryPostInfo(size, lastId);
-    return res.status(200).json(result);
+    const apiResponse = postController.findAllSummaryPostInfo(size, lastId);
+    return apiResponse.resolve(res);
 });
 
 // 댓글 추가
@@ -86,12 +86,12 @@ postRouter.post('/comments', async (req, res) => {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
-    const result = postController.createPostComment({
+    const apiResponse = postController.createPostComment({
         postId,
         content,
         author: user,
     });
-    res.status(201).json(result);
+    apiResponse.resolve(res);
 });
 
 // 댓글 수정
@@ -104,8 +104,8 @@ postRouter.put('/comments', async (req, res) => {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
-    const result = postController.updatePostComment(commentId, content, user);
-    res.status(200).json(result);
+    const apiResponse = postController.updatePostComment(commentId, content, user);
+    apiResponse.resolve(res);
 });
 
 // 댓글 삭제
@@ -117,8 +117,8 @@ postRouter.delete('/comments', async (req, res) => {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
-    postController.deletePostComment(commentId, user.id);
-    res.status(204).send();
+    const apiResponse = postController.deletePostComment(commentId, user.id);
+    apiResponse.resolve(res);
 });
 
 // 좋아요 추가
@@ -130,8 +130,8 @@ postRouter.post('/likes', async (req, res) => {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
-    const result = postController.createPostLike(user.id, postId);
-    res.status(201).json(result);
+    const apiResponse = postController.createPostLike(user.id, postId);
+    apiResponse.resolve(res);
 });
 
 // 좋아요 삭제
@@ -143,8 +143,8 @@ postRouter.delete('/likes', async (req, res) => {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
-    postController.deletePostLike(user.id, postId);
-    res.status(204).send();
+    const apiResponse = postController.deletePostLike(user.id, postId);
+    apiResponse.resolve(res);
 });
 
 // 게시글 추가
@@ -157,14 +157,14 @@ postRouter.post('/', upload.single('postImage'), async (req, res) => {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
-    const result = await postController.createPost({
+    const apiResponse = await postController.createPost({
         title,
         content,
         contentImage,
         user,
     });
 
-    return res.status(201).json(result);
+    apiResponse.resolve(res);
 });
 
 // 게시글 수정
@@ -179,7 +179,7 @@ postRouter.put('/:postId', upload.single('postImage'), async (req, res) => {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
-    const result = await postController.updatePost(
+    const apiResponse = await postController.updatePost(
         postId,
         {
             title,
@@ -189,8 +189,7 @@ postRouter.put('/:postId', upload.single('postImage'), async (req, res) => {
         },
         user.id,
     );
-
-    return res.status(200).json(result);
+    apiResponse.resolve(res);
 });
 
 // 게시글 삭제 (posts/like 와 경로가 겹쳐 게시글 삭제 API 를 아래에 위치시킴)
@@ -202,8 +201,8 @@ postRouter.delete('/:postId', async (req, res) => {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
-    postController.deletePost(postId, user.id);
-    return res.status(204).send();
+    const apiResponse = postController.deletePost(postId, user.id);
+    apiResponse.resolve(res);
 });
 
 export default postRouter;

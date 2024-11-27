@@ -69,13 +69,13 @@ authRouter.post('/signup', upload.single('profileImage'), async (req, res) => {
         );
     }
 
-    const result = await authController.register(
+    const apiResponse = await authController.register(
         email,
         password,
         nickname,
         profileImage,
     );
-    res.status(200).json(result);
+    apiResponse.resolve(res);
 });
 
 // 닉네임 중복 여부 조회
@@ -119,13 +119,13 @@ authRouter.post('/signin', upload.none(), async (req, res) => {
         );
     }
 
-    const result = await authController.login(
+    const apiResponse = await authController.login(
         res,
         sessionIdToRemove,
         email,
         password,
     );
-    return res.status(200).json(result);
+    apiResponse.resolve(res);
 });
 
 // 로그아웃
@@ -136,11 +136,12 @@ authRouter.post('/logout', (req, res) => {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
-    authController.logout(res, sessionId);
+    const apiResponse = authController.logout(res, sessionId);
+    apiResponse.resolve(res);
 });
 
 // 회원 탈퇴
-authRouter.delete('/withdrawal', (req, res) => {
+authRouter.delete('/withdrawal', async (req, res) => {
     const sessionId = req.cookies.session_id;
 
     if (sessionId === undefined) {
@@ -149,7 +150,8 @@ authRouter.delete('/withdrawal', (req, res) => {
 
     const userId = getLoggedInUser(sessionId).id;
 
-    authController.withdraw(res, sessionId, userId);
+    const apiResponse = await authController.withdraw(res, sessionId, userId);
+    apiResponse.resolve(res);
 });
 
 // client에서 로그인 여부 확인을 위한 API

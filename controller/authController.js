@@ -1,6 +1,8 @@
 import 'express-async-errors';
 import bcrypt from 'bcryptjs';
 
+// DTO
+import { ApiResponse } from '../dto/apiResponse.js';
 import { ErrorResponse } from '../dto/errorResponse.js';
 
 // DAO
@@ -49,11 +51,8 @@ class AuthController {
         );
         userDao.createUser(newUser);
 
-        return {
-            code: 2001,
-            message: '회원가입 성공',
-            data: { userId: newUser.id },
-        };
+        const data = { userId: newUser.id };
+        return new ApiResponse(200, 2001, '회원가입 성공', data);
     }
 
     checkNicknameAvailability(nickname) {
@@ -62,11 +61,9 @@ class AuthController {
                 isAvailable: false,
             });
         }
-        return {
-            code: 2000,
-            message: '사용 가능한 닉네임입니다',
-            data: { isAvailable: true },
-        };
+        
+        const data = { isAvailable: true };
+        return new ApiResponse(200, 2000, '사용 가능한 닉네임입니다', data);
     }
 
     async login(res, sessionIdToRemove, email, password) {
@@ -92,17 +89,15 @@ class AuthController {
 
         res.cookie('session_id', sessionId, sessionOptions);
 
-        return {
-            code: 2000,
-            message: '로그인 성공',
-            data: { userId: user.id },
-        };
+        const data = { userId: user.id };
+        return new ApiResponse(200, 2000, '로그인 성공', data);
     }
 
-    async logout(res, sessionId) {
+    logout(res, sessionId) {
         removeSession(sessionId);
         res.clearCookie('session_id');
-        res.status(204).end();
+
+        return new ApiResponse(204);
     }
 
     async withdraw(res, sessionId, userId) {
@@ -124,7 +119,8 @@ class AuthController {
 
         removeSession(sessionId);
         res.clearCookie('session_id');
-        res.status(204).end();
+        
+        return new ApiResponse(204);
     }
 }
 

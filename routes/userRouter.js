@@ -40,8 +40,8 @@ userRouter.get('/me', async (req, res) => {
     const sessionId = req.cookies.session_id;
     const user = getLoggedInUser(sessionId);
 
-    const result = userController.findUserInfo(user.id);
-    res.status(200).json(result);
+    const apiResponse = userController.findUserInfo(user.id);
+    apiResponse.resolve(res);
 });
 
 // 회원정보 수정
@@ -60,12 +60,12 @@ userRouter.put('/me', upload.single('profileImage'), async (req, res) => {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
-    const result = await userController.updateUser(user.id, {
+    const apiResponse = await userController.updateUser(user.id, {
         nickname,
         isProfileImageRemoved,
         profileImage,
     });
-    res.status(200).json(result);
+    apiResponse.resolve(res);
 });
 
 userRouter.patch('/me/password', upload.none(), async (req, res) => {
@@ -100,11 +100,11 @@ userRouter.patch('/me/password', upload.none(), async (req, res) => {
         );
     }
 
-    const result = await userController.updateUserPassword(user.id, {
+    const apiResponse = await userController.updateUserPassword(user.id, {
         newPassword: newPassword,
         passwordCheck: passwordCheck,
     });
-    res.status(200).json(result);
+    apiResponse.resolve(res);
 });
 
 export default userRouter;

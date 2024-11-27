@@ -1,5 +1,7 @@
 import 'express-async-errors';
 
+// DTO
+import { ApiResponse } from '../dto/apiResponse.js';
 import { ErrorResponse } from '../dto/errorResponse.js';
 
 // DAO
@@ -88,11 +90,7 @@ class PostController {
             });
         }
 
-        return {
-            code: 2000,
-            message: '게시글 상세 정보 단건 조회 성공',
-            data: data,
-        };
+        return new ApiResponse(200, 2000, '게시글 상세 정보 단건 조회 성공', data);
     }
 
     findAllSummaryPostInfo(queriedSize, queriedLastId) {
@@ -132,11 +130,7 @@ class PostController {
             );
         }
 
-        return {
-            code: 2000,
-            message: '게시글 요약 정보 전체 조회 성공',
-            data: data,
-        };
+        return new ApiResponse(200, 2000, '게시글 요약 정보 전체 조회 성공', data);
     }
 
     async createPost(postDto) {
@@ -147,7 +141,8 @@ class PostController {
         const post = new Post(title, content, contentImageUrl, author.id);
         this.postDao.createPost(post);
 
-        return { code: 2001, message: '성공', data: { postId: post.id } };
+        const data = { postId: post.id };
+        return new ApiResponse(201, 2001, '게시글 추가 성공', data);
     }
 
     async updatePost(postId, updatePostDto, userId) {
@@ -173,11 +168,8 @@ class PostController {
         const updatedPostDto = { title, content, contentImageUrl };
         const updatedPost = this.postDao.updatePost(postId, updatedPostDto);
 
-        return {
-            code: 2000,
-            message: '게시글 수정 성공',
-            data: { postId: updatedPost.id },
-        };
+        const data = { postId: updatedPost.id };
+        return new ApiResponse(200, 2000, '게시글 수정 성공', data);
     }
 
     deletePost(postId, userId) {
@@ -204,7 +196,7 @@ class PostController {
         if (post.contentImageUrl) {
             deleteImage(post.contentImageUrl);
         }
-        return;
+        return new ApiResponse(204);
     }
 
     createPostLike(userId, postId) {
@@ -221,11 +213,8 @@ class PostController {
         const newPostLike = new PostLike(userId, post.id);
         this.postLikeDao.createPostLike(newPostLike);
 
-        return {
-            code: 2001,
-            message: '성공',
-            data: { likeId: newPostLike.id },
-        };
+        const data = { likeId: newPostLike.id };
+        return new ApiResponse(201, 2001, '좋아요 추가 성공', data);
     }
 
     deletePostLike(userId, postId) {
@@ -245,6 +234,8 @@ class PostController {
         }
 
         this.postLikeDao.deletePostLike(postLike);
+
+        return new ApiResponse(204);
     }
 
     createPostComment(commentDto) {
@@ -265,11 +256,8 @@ class PostController {
             profileImageUrl: author.profileImageUrl,
         };
 
-        return {
-            code: 2001,
-            message: '성공',
-            data: { comment: commentResult },
-        };
+        const data = { comment: commentResult };
+        return new ApiResponse(201, 2001, '댓글 추가 성공', data);
     }
 
     updatePostComment(commentId, content) {
@@ -278,11 +266,8 @@ class PostController {
             content,
         );
 
-        return {
-            code: 2000,
-            message: '댓글 수정 성공',
-            data: { commentId: updatedComment.id },
-        };
+        const data = { commentId: updatedComment.id };
+        return new ApiResponse(200, 2000, '댓글 수정 성공', data);
     }
 
     deletePostComment(commentId, userId) {
@@ -293,6 +278,7 @@ class PostController {
         }
 
         this.commentDao.deleteComment(commentId);
+        return new ApiResponse(204);
     }
 }
 

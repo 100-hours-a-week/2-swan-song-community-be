@@ -1,8 +1,11 @@
 import 'express-async-errors';
 import bcrypt from 'bcryptjs';
 
+// DTO
+import { ApiResponse } from '../dto/apiResponse.js';
 import { ErrorResponse } from '../dto/errorResponse.js';
 
+// DAO
 import { userDao } from '../dao/userDaos.js';
 
 import { saveImage, deleteImage } from '../utils/imageUtils.js';
@@ -22,12 +25,7 @@ class UserController {
             profileImageUrl: user.profileImageUrl,
             createdDateTime: user.createdDateTime,
         };
-
-        return {
-            code: 2000,
-            message: '사용자 정보 조회 성공',
-            data: data,
-        };
+        return new ApiResponse(200, 2000, '사용자 정보 조회 성공', data);
     }
 
     async updateUser(userId, updateUserDto) {
@@ -68,11 +66,7 @@ class UserController {
             userId: user.id,
         };
 
-        return {
-            code: 2000,
-            message: '사용자 정보 수정 성공',
-            data: data,
-        };
+        return new ApiResponse(200, 2000, '사용자 정보 수정 성공', data);
     }
 
     async updateUserPassword(userId, updateUserPasswordDto) {
@@ -95,11 +89,7 @@ class UserController {
             userId: userId,
         };
 
-        return {
-            code: 2000,
-            message: '비밀번호 수정 성공',
-            data: data,
-        };
+        return new ApiResponse(200, 2000, '비밀번호 수정 성공', data);
     }
 }
 
