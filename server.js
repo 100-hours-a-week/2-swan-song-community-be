@@ -46,7 +46,7 @@ app.use((err, req, res, next) => {
     res.status(err.httpStatus || 500).json(
         err.errorResponse || {
             code: 5000,
-            message: '현재 처리가 어렵습니다.',
+            message: '서버 내 오류가 발생했습니다.',
             data: null,
         },
     );
