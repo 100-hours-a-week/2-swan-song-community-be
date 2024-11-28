@@ -267,7 +267,7 @@ class PostController {
             commentId: newComment.id,
             content: newComment.content,
             postId: post.id,
-            createdDateTime: newComment.createdDateTime,
+            createdDateTime: formatDateTime(newComment.createdDateTime),
             authorName: author.nickname,
             profileImageUrl: author.profileImageUrl,
         };
