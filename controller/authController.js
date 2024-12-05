@@ -94,7 +94,7 @@ class AuthController {
 
         res.cookie('session_id', sessionId, sessionOptions);
 
-        const data = { userId: user.id };
+        const data = { userId: user.id, profileImageUrl: user.profileImageUrl };
         return new ApiResponse(200, 2000, '로그인 성공', data);
     }
 
@@ -106,10 +106,7 @@ class AuthController {
     }
 
     async withdraw(res, sessionId, userId) {
-        const posts = postDao.findAllByUserId(userId);
-        posts.forEach(post => {
-            postController.deletePost(post.id);
-        });
+        postDao.deleteAllByUserId(userId);
         commentDao.deleteCommentsByUserId(userId);
         postLikeDao.deleteAllByUserId(userId);
         viewHistoryDao.deleteViewHistoriesByUserId(userId);
