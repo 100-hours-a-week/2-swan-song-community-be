@@ -11,7 +11,6 @@ import { postDao } from '../dao/postDaos.js';
 import { commentDao } from '../dao/commentDaos.js';
 import { viewHistoryDao } from '../dao/viewHistoryDaos.js';
 import { postLikeDao } from '../dao/postLikeDaos.js';
-import { postController } from './postController.js';
 
 // Data Model
 import { User } from '../model/user.js';
@@ -106,10 +105,7 @@ class AuthController {
     }
 
     async withdraw(res, sessionId, userId) {
-        const posts = postDao.findAllByUserId(userId);
-        posts.forEach(post => {
-            postController.deletePost(post.id);
-        });
+        postDao.deleteAllByUserId(userId);
         commentDao.deleteCommentsByUserId(userId);
         postLikeDao.deleteAllByUserId(userId);
         viewHistoryDao.deleteViewHistoriesByUserId(userId);
