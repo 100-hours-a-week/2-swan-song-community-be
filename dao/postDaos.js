@@ -59,7 +59,7 @@ class InMemoryPostDao extends IPostDao {
     }
 
     findAllByUserId(userId) {
-        return this.posts.filter(post => post.userId === userId);
+        return this.posts.filter(post => post.authorId === userId);
     }
 
     createPost(post) {
@@ -107,6 +107,14 @@ class InMemoryPostDao extends IPostDao {
     deletePost(post) {
         const postIdx = this.posts.indexOf(post);
         this.posts.splice(postIdx, 1);
+        flush(postJsonFilename, this.posts);
+    }
+
+    deleteAllByUserId(userId) {
+        const posts = this.findAllByUserId(userId);
+        posts.forEach(post => {
+            this.deletePost(post);
+        });
         flush(postJsonFilename, this.posts);
     }
 }
