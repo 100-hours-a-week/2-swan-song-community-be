@@ -113,7 +113,7 @@ class InMemoryPostDao extends IPostDao {
     deleteAllByUserId(userId) {
         const posts = this.findAllByUserId(userId);
         posts.forEach(post => {
-            this.deletePost(post.id);
+            this.deletePost(post);
         });
         flush(postJsonFilename, this.posts);
     }
