@@ -41,7 +41,7 @@ app.use((err, req, res, next) => {
     const headers = JSON.stringify(req.headers);
 
     logger.error(
-        `${req.method} ${req.originalUrl} ${headers} ${query} ${body} - ${err.errorResponse.message}`,
+        `${req.method} ${req.originalUrl} ${headers} ${query} ${body} - ${err?.errorResponse?.message} -${err?.message}`,
     );
     res.status(err.httpStatus || 500).json(
         err.errorResponse || {

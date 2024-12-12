@@ -152,7 +152,16 @@ class PostController {
         const post = new Post(title, content, contentImageUrl, author.id);
         this.postDao.createPost(post);
 
-        const data = { postId: post.id };
+        const data = { 
+            postId: post.id,
+            title: post.title,
+            likeCount: this.postLikeDao.findByPostId(post.id).length,
+            commentCount: this.commentDao.findByPostId(post.id).length,
+            viewCount: this.viewHistoryDao.countViewHistoriesByPostId(post.id),
+            createdDateTime: formatDateTime(post.createdDateTime),
+            authorName: author.nickname,
+            profileImageUrl: author.profileImageUrl,
+        };
         return new ApiResponse(201, 2001, '게시글 추가 성공', data);
     }
 
