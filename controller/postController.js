@@ -115,8 +115,11 @@ class PostController {
                 commentCount: this.commentDao.findByPostId(p.id).length,
                 viewCount: this.viewHistoryDao.countViewHistoriesByPostId(p.id),
                 createdDateTime: formatDateTime(p.createdDateTime),
-                authorName: author.nickname,
-                profileImageUrl: author.profileImageUrl,
+                author: {
+                    id: author.id,
+                    name: author.nickname,
+                    profileImageUrl: author.profileImageUrl,
+                },
             };
         });
 
@@ -152,15 +155,18 @@ class PostController {
         const post = new Post(title, content, contentImageUrl, author.id);
         this.postDao.createPost(post);
 
-        const data = { 
+        const data = {
             postId: post.id,
             title: post.title,
             likeCount: this.postLikeDao.findByPostId(post.id).length,
             commentCount: this.commentDao.findByPostId(post.id).length,
             viewCount: this.viewHistoryDao.countViewHistoriesByPostId(post.id),
             createdDateTime: formatDateTime(post.createdDateTime),
-            authorName: author.nickname,
-            profileImageUrl: author.profileImageUrl,
+            author: {
+                id: author.id,
+                name: author.nickname,
+                profileImageUrl: author.profileImageUrl,
+            },
         };
         return new ApiResponse(201, 2001, '게시글 추가 성공', data);
     }
@@ -277,21 +283,41 @@ class PostController {
             content: newComment.content,
             postId: post.id,
             createdDateTime: formatDateTime(newComment.createdDateTime),
-            authorName: author.nickname,
-            profileImageUrl: author.profileImageUrl,
+            author: {
+                id: author.id,
+                name: author.nickname,
+                profileImageUrl: author.profileImageUrl,
+            },
         };
 
         const data = { comment: commentResult };
         return new ApiResponse(201, 2001, '댓글 추가 성공', data);
     }
 
-    updatePostComment(commentId, content) {
+    updatePostComment({ commentId, content, user: author }) {
+        const originalAuthorId = this.commentDao.findById(commentId).authorId;
+
+        if (originalAuthorId !== author.id)
+            throw new ErrorResponse(403, 4003, '접근 권한이 없습니다.', null);
+
         const updatedComment = this.commentDao.updateComment(
             commentId,
             content,
         );
 
-        const data = { commentId: updatedComment.id };
+        const commentResult = {
+            commentId: updatedComment.id,
+            content: updatedComment.content,
+            postId: updatedComment.postId,
+            createdDateTime: formatDateTime(updatedComment.createdDateTime),
+            author: {
+                id: author.id,
+                name: author.nickname,
+                profileImageUrl: author.profileImageUrl,
+            },
+        };
+
+        const data = { comment: commentResult };
         return new ApiResponse(200, 2000, '댓글 수정 성공', data);
     }
 

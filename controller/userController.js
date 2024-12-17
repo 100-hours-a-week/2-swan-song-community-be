@@ -64,7 +64,9 @@ class UserController {
         this.userDao.updateUser(userId, updatedUserDto);
 
         const data = {
-            userId: user.id,
+            id: userId,
+            name: nickname,
+            profileImageUrl: profileImageUrl,
         };
 
         return new ApiResponse(200, 2000, '사용자 정보 수정 성공', data);
