@@ -9,7 +9,7 @@ import { ErrorResponse } from '../dto/errorResponse.js';
 import { userDao } from '../dao/userDaos.js';
 
 import { saveImage, deleteImage } from '../utils/imageUtils.js';
-import { formatDateTime } from '../utils/datetimeUtils.js';
+import { formatDateTime } from '../utils/dateTimeUtils.js';
 
 class UserController {
     constructor(userDao) {
