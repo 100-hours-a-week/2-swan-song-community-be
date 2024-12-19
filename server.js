@@ -23,7 +23,10 @@ app.use(bodyParser.json());
 
 // CORS 설정: 3000 포트에서만 허용
 const corsOptions = {
-    origin: 'http://localhost:3000',
+    origin: (origin, callback) => {
+        logger.info(`origin - ${origin}`)
+        callback(null, true);
+    },
     allowedHeaders: ['Content-Type', 'Authorization', 'Set-Cookie'],
     credentials: true,
 };
