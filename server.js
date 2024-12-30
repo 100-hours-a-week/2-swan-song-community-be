@@ -1,6 +1,8 @@
 import express from 'express';
 import 'express-async-errors';
 
+import './config/connect.js';
+
 import logger from './utils/logger.js';
 import dotenv from 'dotenv';
 
