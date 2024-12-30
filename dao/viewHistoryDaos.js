@@ -78,4 +78,39 @@ class InMemoryViewHistoryDao extends IViewHistoryDao {
     }
 }
 
-export const viewHistoryDao = new InMemoryViewHistoryDao(viewHistories);
+class MariaDbViewHistoryDao extends IViewHistoryDao {
+    async existsViewHistoriesByUserIdAndPostId(conn, userId, postId) {
+        const rows = await conn.query(
+            'SELECT COUNT(*) AS count FROM view_history WHERE userId = ? AND postId = ?',
+            [userId, postId],
+        );
+        return rows[0].count > 0;
+    }
+
+    async countViewHistoriesByPostId(conn, postId) {
+        const rows = await conn.query(
+            'SELECT COUNT(*) AS count FROM view_history WHERE postId = ?',
+            [postId],
+        );
+        return rows[0].count;
+    }
+
+    async createViewHistory(conn, viewHistory) {
+        const { userId, postId, viewedAt } = viewHistory;
+        const rows = await conn.query(
+            'INSERT INTO view_history (userId, postId) VALUES (?, ?) RETURNING *',
+            [userId, postId, viewedAt],
+        );
+        return rows[0];
+    }
+
+    async deleteViewHistoriesByPostId(conn, postId) {
+        await conn.query('DELETE FROM view_history WHERE postId = ?', [postId]);
+    }
+
+    async deleteViewHistoriesByUserId(conn, userId) {
+        await conn.query('DELETE FROM view_history WHERE userId = ?', [userId]);
+    }
+}
+
+export const viewHistoryDao = new MariaDbViewHistoryDao();

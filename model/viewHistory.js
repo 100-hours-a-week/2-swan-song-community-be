@@ -1,8 +1,6 @@
-import { generateViewHistoryId } from './inMemoryDB.js';
-
 export class ViewHistory {
     constructor(userId, postId) {
-        this.id = generateViewHistoryId();
+        this.id = 0;
         this.userId = userId;
         this.postId = postId;
     }

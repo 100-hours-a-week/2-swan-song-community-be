@@ -16,8 +16,8 @@ class UserController {
         this.userDao = userDao;
     }
 
-    findUserInfo(userId) {
-        const user = this.userDao.findById(userId);
+    async findUserInfo(conn, userId) {
+        const user = await this.userDao.findById(conn, userId);
 
         const data = {
             userId: user.id,
@@ -29,14 +29,14 @@ class UserController {
         return new ApiResponse(200, 2000, '사용자 정보 조회 성공', data);
     }
 
-    async updateUser(userId, updateUserDto) {
+    async updateUser(conn, userId, updateUserDto) {
         const { nickname, isProfileImageRemoved, profileImage } = updateUserDto;
 
-        const user = this.userDao.findById(userId);
+        const user = await this.userDao.findById(conn, userId);
 
         if (
             user.nickname !== nickname &&
-            this.userDao.findByNickname(nickname)
+            (await this.userDao.findByNickname(conn, nickname))
         ) {
             throw new ErrorResponse(
                 200,
@@ -61,7 +61,7 @@ class UserController {
             profileImageUrl: profileImageUrl,
         };
 
-        this.userDao.updateUser(userId, updatedUserDto);
+        await this.userDao.updateUser(conn, userId, updatedUserDto);
 
         const data = {
             id: userId,
@@ -72,7 +72,7 @@ class UserController {
         return new ApiResponse(200, 2000, '사용자 정보 수정 성공', data);
     }
 
-    async updateUserPassword(userId, updateUserPasswordDto) {
+    async updateUserPassword(conn, userId, updateUserPasswordDto) {
         const { newPassword, passwordCheck } = updateUserPasswordDto;
 
         if (newPassword !== passwordCheck) {
@@ -86,7 +86,7 @@ class UserController {
 
         const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-        this.userDao.updateUserPassword(userId, hashedPassword);
+        await this.userDao.updateUserPassword(conn, userId, hashedPassword);
 
         const data = {
             userId: userId,

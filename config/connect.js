@@ -7,6 +7,8 @@ const defaultConfig = {
     port: process.env.DB_PORT,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
+    database: process.env.DB_DATABASE,
+    connectionLimit: process.env.DB_CONNECTION_LIMIT,
 };
 
 const CONFIG_FILE = './credential.json';
@@ -31,6 +33,7 @@ const config = loadConfig();
 const pool = mariadb.createPool(config);
 
 async function asyncFunction() {
+    logger.info(`{DB_HOST: ${config.host}, DB_PORT: ${config.port}, DB_USER: ${config.user}, DB_DATABASE: ${config.database}}, DB_CONNECTION_LIMIT: ${config.connectionLimit}`);
     let conn;
     try {
         conn = await pool.getConnection();

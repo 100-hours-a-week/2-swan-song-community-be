@@ -3,6 +3,8 @@
 import express from 'express';
 import 'express-async-errors';
 
+import { withTransaction } from '../utils/transactionManager.js';
+
 import { ErrorResponse } from '../dto/errorResponse.js';
 
 import multer from 'multer';
@@ -38,9 +40,13 @@ userRouter.use(checkAuthorization);
 // 내 정보 조회
 userRouter.get('/me', async (req, res) => {
     const sessionId = req.cookies.session_id;
-    const user = getLoggedInUser(sessionId);
+    const user = await withTransaction(async conn => {
+        return await getLoggedInUser(conn, sessionId);
+    });
 
-    const apiResponse = userController.findUserInfo(user.id);
+    const apiResponse = await withTransaction(async conn => {
+        return await userController.findUserInfo(conn, user.id);
+    });
     apiResponse.resolve(res);
 });
 
@@ -50,7 +56,9 @@ userRouter.put('/me', upload.single('profileImage'), async (req, res) => {
     const isProfileImageRemoved = req.body.isProfileImageRemoved === 'true';
     const profileImage = req.file;
     const sessionId = req.cookies.session_id;
-    const user = getLoggedInUser(sessionId);
+    const user = await withTransaction(async conn => {
+        return await getLoggedInUser(conn, sessionId);
+    });
 
     if (
         (!nickname || nickname === user.nickname) &&
@@ -60,17 +68,21 @@ userRouter.put('/me', upload.single('profileImage'), async (req, res) => {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
-    const apiResponse = await userController.updateUser(user.id, {
-        nickname,
-        isProfileImageRemoved,
-        profileImage,
+    const apiResponse = await withTransaction(async conn => {
+        return await userController.updateUser(conn, user.id, {
+            nickname,
+            isProfileImageRemoved,
+            profileImage,
+        });
     });
     apiResponse.resolve(res);
 });
 
 userRouter.patch('/me/password', upload.none(), async (req, res) => {
     const sessionId = req.cookies.session_id;
-    const user = getLoggedInUser(sessionId);
+    const user = await withTransaction(async conn => {
+        return await getLoggedInUser(conn, sessionId);
+    });
 
     const { newPassword, passwordCheck } = req.body;
 
@@ -100,9 +112,11 @@ userRouter.patch('/me/password', upload.none(), async (req, res) => {
         );
     }
 
-    const apiResponse = await userController.updateUserPassword(user.id, {
-        newPassword: newPassword,
-        passwordCheck: passwordCheck,
+    const apiResponse = await withTransaction(async conn => {
+        return await userController.updateUserPassword(conn, user.id, {
+            newPassword,
+            passwordCheck,
+        });
     });
     apiResponse.resolve(res);
 });

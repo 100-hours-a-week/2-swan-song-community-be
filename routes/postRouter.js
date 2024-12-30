@@ -3,6 +3,8 @@
 import express from 'express';
 import 'express-async-errors';
 
+import { withTransaction } from '../utils/transactionManager.js';
+
 import { ErrorResponse } from '../dto/errorResponse.js';
 
 import multer from 'multer';
@@ -39,7 +41,9 @@ postRouter.use(checkAuthorization);
 postRouter.get('/:postId', async (req, res) => {
     const postId = parseInt(req.params.postId);
     const commentFlag = req.query.comment ? req.query.comment : 'y';
-    const user = getLoggedInUser(req.cookies.session_id);
+    const user = await withTransaction(
+        async conn => await getLoggedInUser(conn, req.cookies.session_id),
+    );
 
     // postId가 숫자가 아니거나 1보다 작거나, commentFlag가 y나 n이 아닌 경우 400 에러 반환
     if (
@@ -50,10 +54,14 @@ postRouter.get('/:postId', async (req, res) => {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
-    const apiResponse = postController.findDetailPostInfo(
-        postId,
-        commentFlag,
-        user.id,
+    const apiResponse = await withTransaction(
+        async conn =>
+            await postController.findDetailPostInfo(
+                conn,
+                postId,
+                commentFlag,
+                user.id,
+            ),
     );
     apiResponse.resolve(res);
 });
@@ -72,7 +80,10 @@ postRouter.get('/', async (req, res) => {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
-    const apiResponse = postController.findAllSummaryPostInfo(size, lastId);
+    const apiResponse = await withTransaction(
+        async conn =>
+            await postController.findAllSummaryPostInfo(conn, size, lastId),
+    );
     return apiResponse.resolve(res);
 });
 
@@ -80,17 +91,22 @@ postRouter.get('/', async (req, res) => {
 postRouter.post('/comments', async (req, res) => {
     const postId = parseInt(req.body.postId);
     const content = req.body.content;
-    const user = getLoggedInUser(req.cookies.session_id);
+    const user = await withTransaction(
+        async conn => await getLoggedInUser(conn, req.cookies.session_id),
+    );
 
     if (!postId || !content) {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
-    const apiResponse = postController.createPostComment({
-        postId,
-        content,
-        author: user,
-    });
+    const apiResponse = await withTransaction(
+        async conn =>
+            await postController.createPostComment(conn, {
+                postId,
+                content,
+                author: user,
+            }),
+    );
     apiResponse.resolve(res);
 });
 
@@ -98,56 +114,76 @@ postRouter.post('/comments', async (req, res) => {
 postRouter.put('/comments', async (req, res) => {
     const commentId = parseInt(req.body.commentId);
     const content = req.body.content;
-    const user = getLoggedInUser(req.cookies.session_id);
+    const user = await withTransaction(
+        async conn => await getLoggedInUser(conn, req.cookies.session_id),
+    );
 
     if (!content || isNaN(commentId) || commentId < 1) {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
-    const apiResponse = postController.updatePostComment({
-        commentId,
-        content,
-        user,
-    });
+    const apiResponse = await withTransaction(
+        async conn =>
+            await postController.updatePostComment(conn, {
+                commentId,
+                content,
+                user,
+            }),
+    );
     apiResponse.resolve(res);
 });
 
 // 댓글 삭제
 postRouter.delete('/comments', async (req, res) => {
     const commentId = parseInt(req.body.commentId);
-    const user = getLoggedInUser(req.cookies.session_id);
+    const user = await withTransaction(
+        async conn => await getLoggedInUser(conn, req.cookies.session_id),
+    );
 
     if (isNaN(commentId) || commentId < 1) {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
-    const apiResponse = postController.deletePostComment(commentId, user.id);
+    const apiResponse = await withTransaction(
+        async conn =>
+            await postController.deletePostComment(conn, commentId, user.id),
+    );
     apiResponse.resolve(res);
 });
 
 // 좋아요 추가
 postRouter.post('/likes', async (req, res) => {
     const postId = parseInt(req.body.postId);
-    const user = getLoggedInUser(req.cookies.session_id);
+    const user = await withTransaction(
+        async conn => await getLoggedInUser(conn, req.cookies.session_id),
+    );
 
     if (!postId) {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
-    const apiResponse = postController.createPostLike(user.id, postId);
+    const apiResponse = await withTransaction(
+        async conn =>
+            await postController.createPostLike(conn, user.id, postId),
+    );
     apiResponse.resolve(res);
 });
 
 // 좋아요 삭제
 postRouter.delete('/likes', async (req, res) => {
     const postId = parseInt(req.body.postId);
-    const user = getLoggedInUser(req.cookies.session_id);
+    const user = await withTransaction(
+        async conn => await getLoggedInUser(conn, req.cookies.session_id),
+    );
 
     if (!postId) {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
-    const apiResponse = postController.deletePostLike(user.id, postId);
+    const apiResponse = await withTransaction(
+        async conn =>
+            await postController.deletePostLike(conn, user.id, postId),
+    );
     apiResponse.resolve(res);
 });
 
@@ -155,19 +191,23 @@ postRouter.delete('/likes', async (req, res) => {
 postRouter.post('/', upload.single('postImage'), async (req, res) => {
     const { title, content } = req.body;
     const contentImage = req.file;
-    const user = getLoggedInUser(req.cookies.session_id);
+    const user = await withTransaction(
+        async conn => await getLoggedInUser(conn, req.cookies.session_id),
+    );
 
     if (!title || !content) {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
-    const apiResponse = await postController.createPost({
-        title,
-        content,
-        contentImage,
-        user,
-    });
-
+    const apiResponse = await withTransaction(
+        async conn =>
+            await postController.createPost(conn, {
+                title,
+                content,
+                contentImage,
+                user,
+            }),
+    );
     apiResponse.resolve(res);
 });
 
@@ -177,21 +217,27 @@ postRouter.put('/:postId', upload.single('postImage'), async (req, res) => {
     const { title, content, removeImageFlag } = req.body;
     const isRemoveImage = removeImageFlag === 'true';
     const contentImage = req.file;
-    const user = getLoggedInUser(req.cookies.session_id);
+    const user = await withTransaction(
+        async conn => await getLoggedInUser(conn, req.cookies.session_id),
+    );
 
     if (!title || !content || isNaN(postId) || postId < 1) {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
-    const apiResponse = await postController.updatePost(
-        postId,
-        {
-            title,
-            content,
-            contentImage,
-            isRemoveImage,
-        },
-        user.id,
+    const apiResponse = await withTransaction(
+        async conn =>
+            await postController.updatePost(
+                conn,
+                postId,
+                {
+                    title,
+                    content,
+                    contentImage,
+                    isRemoveImage,
+                },
+                user.id,
+            ),
     );
     apiResponse.resolve(res);
 });
@@ -199,13 +245,17 @@ postRouter.put('/:postId', upload.single('postImage'), async (req, res) => {
 // 게시글 삭제 (posts/like 와 경로가 겹쳐 게시글 삭제 API 를 아래에 위치시킴)
 postRouter.delete('/:postId', async (req, res) => {
     const postId = parseInt(req.params.postId);
-    const user = getLoggedInUser(req.cookies.session_id);
+    const user = await withTransaction(
+        async conn => await getLoggedInUser(conn, req.cookies.session_id),
+    );
 
     if (isNaN(postId) || postId < 1) {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
-    const apiResponse = postController.deletePost(postId, user.id);
+    const apiResponse = await withTransaction(
+        async conn => await postController.deletePost(conn, postId, user.id),
+    );
     apiResponse.resolve(res);
 });
 
