@@ -1,6 +1,9 @@
 import express from 'express';
 import 'express-async-errors';
 
+import './config/connect.js';
+import './config/json.js';
+
 import logger from './utils/logger.js';
 import dotenv from 'dotenv';
 
@@ -27,9 +30,11 @@ const corsOptions = {
         logger.info(`Origin: ${origin || 'null (likely non-CORS request)'}`);
         // 요청의 IP와 포트를 로그로 출력
         if (global.requestInfo) {
-            logger.info(`Request Info: IP - ${global.requestInfo.ip}, Host - ${global.requestInfo.host}`);
+            logger.info(
+                `Request Info: IP - ${global.requestInfo.ip}, Host - ${global.requestInfo.host}`,
+            );
         }
-        
+
         callback(null, true);
     },
     allowedHeaders: ['Content-Type', 'Authorization', 'Set-Cookie'],

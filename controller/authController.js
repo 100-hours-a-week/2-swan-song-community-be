@@ -25,8 +25,8 @@ import {
 import { deleteImage, saveImage } from '../utils/imageUtils.js';
 
 class AuthController {
-    async register(email, password, nickname, profileImage) {
-        if (userDao.findByEmail(email)) {
+    async register(conn, email, password, nickname, profileImage) {
+        if (await userDao.findByEmail(conn, email)) {
             if (profileImage) deleteImage(profileImage.path);
             throw new ErrorResponse(
                 200,
@@ -36,7 +36,7 @@ class AuthController {
             );
         }
 
-        if (userDao.findByNickname(nickname)) {
+        if (await userDao.findByNickname(conn, nickname)) {
             if (profileImage) deleteImage(profileImage.path);
             throw new ErrorResponse(200, 4009, '닉네임이 중복되었습니다', null);
         }
@@ -53,14 +53,14 @@ class AuthController {
             hashedPassword,
             profileImageUrl,
         );
-        userDao.createUser(newUser);
+        const userId = await userDao.createUser(conn, newUser);
 
-        const data = { userId: newUser.id };
+        const data = { userId };
         return new ApiResponse(200, 2001, '회원가입 성공', data);
     }
 
-    checkNicknameAvailability(nickname) {
-        if (userDao.findByNickname(nickname) !== undefined) {
+    async checkNicknameAvailability(conn, nickname) {
+        if (!(await userDao.findByNickname(conn, nickname))) {
             throw new ErrorResponse(200, 4009, '닉네임이 중복되었습니다', {
                 isAvailable: false,
             });
@@ -70,9 +70,9 @@ class AuthController {
         return new ApiResponse(200, 2000, '사용 가능한 닉네임입니다', data);
     }
 
-    async login(res, sessionIdToRemove, email, password) {
+    async login(conn, res, sessionIdToRemove, email, password) {
         // 해당 사용자가 존재하는지, 비밀번호가 일치하는지 확인
-        const user = await userDao.findByEmail(email);
+        const user = await userDao.findByEmail(conn, email);
         if (!user || !(await bcrypt.compare(password, user.password))) {
             throw new ErrorResponse(200, 4001, '인증이 필요합니다.', null);
         }
@@ -104,15 +104,15 @@ class AuthController {
         return new ApiResponse(204);
     }
 
-    async withdraw(res, sessionId, userId) {
-        postDao.deleteAllByUserId(userId);
-        commentDao.deleteCommentsByUserId(userId);
-        postLikeDao.deleteAllByUserId(userId);
-        viewHistoryDao.deleteViewHistoriesByUserId(userId);
+    async withdraw(conn, res, sessionId, userId) {
+        postDao.deleteAllByUserId(conn, userId);
+        commentDao.deleteCommentsByUserId(conn, userId);
+        postLikeDao.deleteAllByUserId(conn, userId);
+        viewHistoryDao.deleteViewHistoriesByUserId(conn, userId);
 
-        const user = userDao.findById(userId);
+        const user = await userDao.findById(conn, userId);
 
-        userDao.deleteUser(user);
+        userDao.deleteUser(conn, user);
 
         if (user.profileImageUrl) {
             deleteImage(user.profileImageUrl);

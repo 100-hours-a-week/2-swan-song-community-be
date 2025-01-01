@@ -96,4 +96,67 @@ class InMemoryUserDao extends IUserDao {
     }
 }
 
-export const userDao = new InMemoryUserDao(users);
+class MariaDbUserDao extends IUserDao {
+    async findById(conn, userId) {
+        const rows = await conn.query('SELECT * FROM user WHERE id = ?', [
+            userId,
+        ]);
+
+        if (rows.length === 0) {
+            throw new ErrorResponse(
+                200,
+                4004,
+                '사용자를 찾을 수 없습니다',
+                null,
+            );
+        }
+
+        return rows[0];
+    }
+
+    async findByEmail(conn, email) {
+        const rows = await conn.query('SELECT * FROM user WHERE email = ?', [
+            email,
+        ]);
+
+        return rows[0] || null;
+    }
+
+    async findByNickname(conn, nickname) {
+        const rows = await conn.query('SELECT * FROM user WHERE nickname = ?', [
+            nickname,
+        ]);
+
+        return rows[0] || null;
+    }
+
+    async createUser(conn, user) {
+        const { email, nickname, password, profileImageUrl } = user;
+        const result = await conn.query(
+            'INSERT INTO user (email, nickname, password, profileImageUrl) VALUES (?, ?, ?, ?)',
+            [email, nickname, password, profileImageUrl],
+        );
+        return result.insertId;
+    }
+
+    async updateUser(conn, userId, updatedUserDto) {
+        const { nickname, profileImageUrl } = updatedUserDto;
+        await conn.query(
+            'UPDATE user SET nickname = ?, profileImageUrl = ? WHERE id = ?',
+            [nickname, profileImageUrl, userId],
+        );
+    }
+
+    async updateUserPassword(conn, userId, hashedPassword) {
+        await conn.query('UPDATE user SET password = ? WHERE id = ?', [
+            hashedPassword,
+            userId,
+        ]);
+    }
+
+    async deleteUser(conn, user) {
+        await conn.query('DELETE FROM user WHERE id = ?', [user.id]);
+    }
+}
+
+export const userDao = new MariaDbUserDao();

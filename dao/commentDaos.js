@@ -96,4 +96,68 @@ class InMemoryCommentDao extends ICommentDao {
     }
 }
 
-export const commentDao = new InMemoryCommentDao(comments);
+class MariaDbCommentDao extends ICommentDao {
+    async findById(conn, id) {
+        const rows = await conn.query('SELECT * FROM comment WHERE id = ?', [
+            id,
+        ]);
+        if (rows.length === 0) {
+            throw new ErrorResponse(200, 4004, '댓글을 찾을 수 없습니다', null);
+        }
+        return rows[0];
+    }
+
+    async findByUserId(conn, userId) {
+        const rows = await conn.query(
+            'SELECT * FROM comment WHERE authorId = ?',
+            [userId],
+        );
+        return rows;
+    }
+
+    async findByPostId(conn, postId) {
+        const rows = await conn.query(
+            'SELECT * FROM comment WHERE postId = ?',
+            [postId],
+        );
+        return rows;
+    }
+
+    async createComment(conn, comment) {
+        const { postId, authorId, content } = comment;
+        const rows = await conn.query(
+            'INSERT INTO comment (postId, authorId, content) VALUES (?, ?, ?) RETURNING *',
+            [postId, authorId, content],
+        );
+        return rows[0];
+    }
+
+    async updateComment(conn, commentId, content) {
+        await conn.query('UPDATE comment SET content = ? WHERE id = ?', [
+            content,
+            commentId,
+        ]);
+        const rows = await conn.query('SELECT * FROM comment WHERE id = ?', [
+            commentId,
+        ]);
+        if (rows.length === 0) {
+            throw new ErrorResponse(200, 4004, '댓글을 찾을 수 없습니다', null);
+        }
+        return rows[0];
+    }
+
+    async deleteComment(conn, commentId) {
+        const result = await conn.query('DELETE FROM comment WHERE id = ?', [
+            commentId,
+        ]);
+        if (result.affectedRows === 0) {
+            throw new ErrorResponse(200, 4004, '댓글을 찾을 수 없습니다', null);
+        }
+    }
+
+    async deleteCommentsByUserId(conn, userId) {
+        await conn.query('DELETE FROM comment WHERE authorId = ?', [userId]);
+    }
+}
+
+export const commentDao = new MariaDbCommentDao();

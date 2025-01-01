@@ -119,4 +119,98 @@ class InMemoryPostDao extends IPostDao {
     }
 }
 
-export const postDao = new InMemoryPostDao(posts);
+class MariaDbPostDao extends IPostDao {
+    async findById(conn, id) {
+        const rows = await conn.query('SELECT * FROM post WHERE id = ?', [id]);
+
+        if (rows.length === 0) {
+            throw new ErrorResponse(
+                200,
+                4004,
+                '포스트를 찾을 수 없습니다',
+                null,
+            );
+        }
+
+        return rows[0];
+    }
+
+    async findAllByUserId(conn, userId) {
+        const rows = await conn.query('SELECT * FROM post WHERE authorId = ?', [
+            userId,
+        ]);
+        return rows;
+    }
+
+    async createPost(conn, post) {
+        const { title, content, contentImageUrl, authorId } = post;
+
+        const rows = await conn.query(
+            'INSERT INTO post (title, content, contentImageUrl, authorId) VALUES (?, ?, ?, ?) RETURNING *',
+            [title, content, contentImageUrl, authorId],
+        );
+
+        return rows[0];
+    }
+
+    async getPaginatedPosts(conn, pSize, pLastId) {
+        let query = 'SELECT * FROM post';
+        const params = [];
+
+        if (pLastId) {
+            query += ' WHERE id < ?';
+            params.push(pLastId);
+        }
+
+        query += ' ORDER BY id DESC LIMIT ?';
+        params.push(pSize);
+
+        const rows = await conn.query(query, params);
+
+        const hasNext = rows.length === pSize;
+        const lastId = hasNext ? rows[rows.length - 1].id : -1;
+
+        return { targetPosts: rows, hasNext, lastId };
+    }
+
+    async updatePost(conn, postId, updatedPostDto) {
+        const { title, content, contentImageUrl } = updatedPostDto;
+
+        const result = await conn.query(
+            'UPDATE post SET title = ?, content = ?, contentImageUrl = ? WHERE id = ?',
+            [title, content, contentImageUrl, postId],
+        );
+
+        if (result.affectedRows === 0) {
+            throw new ErrorResponse(
+                200,
+                4004,
+                '포스트를 찾을 수 없습니다',
+                null,
+            );
+        }
+
+        return { id: postId, title, content, contentImageUrl };
+    }
+
+    async deletePost(conn, post) {
+        const result = await conn.query('DELETE FROM post WHERE id = ?', [
+            post.id,
+        ]);
+
+        if (result.affectedRows === 0) {
+            throw new ErrorResponse(
+                200,
+                4004,
+                '포스트를 찾을 수 없습니다',
+                null,
+            );
+        }
+    }
+
+    async deleteAllByUserId(conn, userId) {
+        await conn.query('DELETE FROM post WHERE authorId = ?', [userId]);
+    }
+}
+
+export const postDao = new MariaDbPostDao();

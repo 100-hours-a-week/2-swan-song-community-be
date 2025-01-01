@@ -3,6 +3,8 @@
 import express from 'express';
 import 'express-async-errors';
 
+import { withTransaction } from '../utils/transactionManager.js';
+
 import { ErrorResponse } from '../dto/errorResponse.js';
 
 import multer from 'multer';
@@ -74,17 +76,20 @@ authRouter.post('/signup', upload.single('profileImage'), async (req, res) => {
         );
     }
 
-    const apiResponse = await authController.register(
-        email,
-        password,
-        nickname,
-        profileImage,
-    );
+    const apiResponse = await withTransaction(async conn => {
+        return await authController.register(
+            conn,
+            email,
+            password,
+            nickname,
+            profileImage,
+        );
+    });
     apiResponse.resolve(res);
 });
 
 // 닉네임 중복 여부 조회
-authRouter.get('/check-nickname', (req, res) => {
+authRouter.get('/check-nickname', async (req, res) => {
     const { nickname } = req.query;
 
     if (!nickname) {
@@ -100,7 +105,9 @@ authRouter.get('/check-nickname', (req, res) => {
         );
     }
 
-    const result = authController.checkNicknameAvailability(nickname);
+    const result = await withTransaction(async conn => {
+        return await authController.checkNicknameAvailability(conn, nickname);
+    });
     res.status(200).json(result);
 });
 
@@ -124,12 +131,15 @@ authRouter.post('/signin', upload.none(), async (req, res) => {
         );
     }
 
-    const apiResponse = await authController.login(
-        res,
-        sessionIdToRemove,
-        email,
-        password,
-    );
+    const apiResponse = await withTransaction(async conn => {
+        return await authController.login(
+            conn,
+            res,
+            sessionIdToRemove,
+            email,
+            password,
+        );
+    });
     apiResponse.resolve(res);
 });
 
@@ -153,9 +163,14 @@ authRouter.delete('/withdrawal', async (req, res) => {
         throw new ErrorResponse(401, 4001, '유효하지 않은 요청입니다', null);
     }
 
-    const userId = getLoggedInUser(sessionId).id;
+    const userId = await withTransaction(async conn => {
+        const user = await getLoggedInUser(conn, sessionId);
+        return user.id;
+    });
 
-    const apiResponse = await authController.withdraw(res, sessionId, userId);
+    const apiResponse = await withTransaction(async conn => {
+        return await authController.withdraw(conn, res, sessionId, userId);
+    });
     apiResponse.resolve(res);
 });
 

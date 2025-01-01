@@ -98,4 +98,80 @@ class InMemoryPostLikeDao extends IPostLikeDao {
     }
 }
 
-export const postLikeDao = new InMemoryPostLikeDao(likes);
+class MariaDbPostLikeDao extends IPostLikeDao {
+    async findById(conn, id) {
+        const rows = await conn.query('SELECT * FROM post_like WHERE id = ?', [
+            id,
+        ]);
+
+        if (rows.length === 0) {
+            throw new ErrorResponse(
+                200,
+                4004,
+                '좋아요를 찾을 수 없습니다',
+                null,
+            );
+        }
+
+        return rows[0];
+    }
+
+    async findByPostId(conn, postId) {
+        const rows = await conn.query(
+            'SELECT * FROM post_like WHERE postId = ?',
+            [postId],
+        );
+        return rows;
+    }
+
+    async findByUserIdAndPostId(conn, userId, postId) {
+        const rows = await conn.query(
+            'SELECT * FROM post_like WHERE userId = ? AND postId = ?',
+            [userId, postId],
+        );
+        return rows[0] || null;
+    }
+
+    async existsByUserIdAndPostId(conn, userId, postId) {
+        const rows = await conn.query(
+            'SELECT COUNT(*) AS count FROM post_like WHERE userId = ? AND postId = ?',
+            [userId, postId],
+        );
+        return rows[0].count > 0;
+    }
+
+    async createPostLike(conn, postLike) {
+        const { userId, postId } = postLike;
+
+        const rows = await conn.query(
+            'INSERT INTO post_like (userId, postId) VALUES (?, ?) RETURNING *',
+            [userId, postId],
+        );
+
+        return rows[0];
+    }
+
+    async deletePostLike(conn, postLike) {
+        const { userId, postId } = postLike;
+
+        const result = await conn.query(
+            'DELETE FROM post_like WHERE userId = ? AND postId = ?',
+            [userId, postId],
+        );
+
+        if (result.affectedRows === 0) {
+            throw new ErrorResponse(
+                200,
+                4004,
+                '좋아요를 찾을 수 없습니다',
+                null,
+            );
+        }
+    }
+
+    async deleteAllByUserId(conn, userId) {
+        await conn.query('DELETE FROM post_like WHERE userId = ?', [userId]);
+    }
+}
+
+export const postLikeDao = new MariaDbPostLikeDao();
