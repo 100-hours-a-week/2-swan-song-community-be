@@ -60,7 +60,7 @@ class AuthController {
     }
 
     async checkNicknameAvailability(conn, nickname) {
-        if (!(await userDao.findByNickname(conn, nickname))) {
+        if (await userDao.findByNickname(conn, nickname)) {
             throw new ErrorResponse(200, 4009, '닉네임이 중복되었습니다', {
                 isAvailable: false,
             });
