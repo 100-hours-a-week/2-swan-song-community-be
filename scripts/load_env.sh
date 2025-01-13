@@ -13,6 +13,7 @@ PARAMETERS=(
   "/ktb-community/$ENVIRONMENT/config/db-connection-limit"
   "/ktb-community/$ENVIRONMENT/config/node/env"
   "/ktb-community/$ENVIRONMENT/config/port"
+  "/ktb-community/$ENVIRONMENT/config/bucket-name"
 )
 
 # 파라미터 목록을 ", "로 구분된 문자열로 변환
