@@ -23,7 +23,7 @@ class UserController {
             userId: user.id,
             email: user.email,
             nickname: user.nickname,
-            profileImageUrl: await getPreSignedUrl(user.profileImageUrl),
+            profileImageUrl: user.profileImageUrl && await getPreSignedUrl(user.profileImageUrl),
             createdDateTime: formatDateTime(user.createdDateTime),
         };
         return new ApiResponse(200, 2000, '사용자 정보 조회 성공', data);

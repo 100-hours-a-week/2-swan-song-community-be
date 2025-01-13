@@ -1,8 +1,7 @@
 import 'express-async-errors';
 import fs from 'fs';
-import path from 'path';
 
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 import logger from './logger.js';
@@ -68,14 +67,17 @@ export const getPreSignedUrl = async s3Key => {
 
 // 이미지 삭제
 export const deleteImage = async imagePath => {
-    const imageFullPath = imagePath.startsWith('public')
-        ? imagePath
-        : path.join('public', imagePath);
-
     try {
-        await fs.promises.unlink(imageFullPath);
+        // S3 객체 삭제
+        const command = new DeleteObjectCommand({
+            Bucket: BUCKET_NAME,
+            Key: imagePath,
+        });
+
+        await s3Client.send(command);
+        logger.info(`이미지 삭제 성공: ${imagePath}`);
     } catch (err) {
-        logger.Error(`이미지 삭제 중 오류 발생: ${err.message}`);
+        logger.error(`이미지 삭제 중 오류 발생: ${err.message}`);
         throw new ErrorResponse(500, 5000, '이미지 삭제 중 오류 발생', null);
     }
 };

@@ -41,9 +41,7 @@ class AuthController {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const { s3Key, profileImageUrl } = profileImage
-            ? await saveImage(profileImage)
-            : null;
+        const s3Key = profileImage && (await saveImage(profileImage)).s3Key;
 
         const newUser = new User(
             email,
