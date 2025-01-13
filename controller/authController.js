@@ -27,7 +27,6 @@ import { deleteImage, saveImage } from '../utils/imageUtils.js';
 class AuthController {
     async register(conn, email, password, nickname, profileImage) {
         if (await userDao.findByEmail(conn, email)) {
-            if (profileImage) deleteImage(profileImage.path);
             throw new ErrorResponse(
                 200,
                 4009,
@@ -37,13 +36,12 @@ class AuthController {
         }
 
         if (await userDao.findByNickname(conn, nickname)) {
-            if (profileImage) deleteImage(profileImage.path);
             throw new ErrorResponse(200, 4009, '닉네임이 중복되었습니다', null);
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const profileImageUrl = profileImage
+        const { s3Key, profileImageUrl } = profileImage
             ? await saveImage(profileImage)
             : null;
 
@@ -51,7 +49,7 @@ class AuthController {
             email,
             nickname,
             hashedPassword,
-            profileImageUrl,
+            s3Key,
         );
         const userId = await userDao.createUser(conn, newUser);
 

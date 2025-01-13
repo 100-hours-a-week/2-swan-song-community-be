@@ -8,7 +8,7 @@ import { ErrorResponse } from '../dto/errorResponse.js';
 // DAO
 import { userDao } from '../dao/userDaos.js';
 
-import { saveImage, deleteImage } from '../utils/imageUtils.js';
+import { saveImage, getPreSignedUrl, deleteImage } from '../utils/imageUtils.js';
 import { formatDateTime } from '../utils/dateTimeUtils.js';
 
 class UserController {
@@ -23,7 +23,7 @@ class UserController {
             userId: user.id,
             email: user.email,
             nickname: user.nickname,
-            profileImageUrl: user.profileImageUrl,
+            profileImageUrl: await getPreSignedUrl(user.profileImageUrl),
             createdDateTime: formatDateTime(user.createdDateTime),
         };
         return new ApiResponse(200, 2000, '사용자 정보 조회 성공', data);
@@ -52,8 +52,13 @@ class UserController {
             profileImageUrl = null;
         }
 
+        let preSignedUrl = null;
         if (profileImage) {
-            profileImageUrl = await saveImage(profileImage);
+            const { s3Key: newS3Key, preSignedUrl: newPreSignedUrl } = await saveImage(
+                profileImage,
+            );
+            profileImageUrl = newS3Key;
+            preSignedUrl = newPreSignedUrl;
         }
 
         const updatedUserDto = {
@@ -66,7 +71,7 @@ class UserController {
         const data = {
             id: userId,
             name: nickname,
-            profileImageUrl: profileImageUrl,
+            profileImageUrl: preSignedUrl,
         };
 
         return new ApiResponse(200, 2000, '사용자 정보 수정 성공', data);

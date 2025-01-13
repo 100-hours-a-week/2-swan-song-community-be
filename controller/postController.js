@@ -17,7 +17,7 @@ import { Comment } from '../model/comment.js';
 import { ViewHistory } from '../model/viewHistory.js';
 import { PostLike } from '../model/postLike.js';
 
-import { saveImage, deleteImage } from '../utils/imageUtils.js';
+import { saveImage, getPreSignedUrl, deleteImage } from '../utils/imageUtils.js';
 import { formatDateTime } from '../utils/dateTimeUtils.js';
 
 class PostController {
@@ -62,11 +62,11 @@ class PostController {
             postId: post.id,
             title: post.title,
             content: post.content,
-            imageUrl: post.contentImageUrl,
+            imageUrl: await getPreSignedUrl(post.contentImageUrl),
             author: {
                 id: author.id,
                 name: author.nickname,
-                profileImageUrl: author.profileImageUrl,
+                profileImageUrl: await getPreSignedUrl(author.profileImageUrl),
             },
             isLiked: await postLikeDao.existsByUserIdAndPostId(
                 conn,
@@ -98,7 +98,7 @@ class PostController {
                         author: {
                             id: author.id,
                             name: author.nickname,
-                            profileImageUrl: author.profileImageUrl,
+                            profileImageUrl: await getPreSignedUrl(author.profileImageUrl),
                         },
                     };
                 }),
@@ -142,7 +142,7 @@ class PostController {
                     author: {
                         id: author.id,
                         name: author.nickname,
-                        profileImageUrl: author.profileImageUrl,
+                        profileImageUrl: await getPreSignedUrl(author.profileImageUrl),
                     },
                 };
             }),
@@ -174,10 +174,10 @@ class PostController {
 
     async createPost(conn, postDto) {
         const { title, content, contentImage, user: author } = postDto;
-        const contentImageUrl = contentImage
+        const { s3Key, contentImageUrl } = contentImage
             ? await saveImage(contentImage)
             : null; // 이미지 저장
-        const post = new Post(title, content, contentImageUrl, author.id);
+        const post = new Post(title, content, s3Key, author.id);
         const createdPost = await this.postDao.createPost(conn, post);
 
         const data = {
@@ -197,7 +197,7 @@ class PostController {
             author: {
                 id: author.id,
                 name: author.nickname,
-                profileImageUrl: author.profileImageUrl,
+                profileImageUrl: await getPreSignedUrl(author.profileImageUrl),
             },
         };
         return new ApiResponse(201, 2001, '게시글 추가 성공', data);
@@ -214,13 +214,13 @@ class PostController {
 
         let contentImageUrl = currentPost.contentImageUrl;
 
-        if (isRemoveImage === true && currentPost.contentImageUrl) {
+        if (isRemoveImage === true && contentImageUrl) {
             deleteImage(currentPost.contentImageUrl);
             contentImageUrl = null;
         }
 
         if (contentImageUrl === null && contentImage) {
-            contentImageUrl = await saveImage(contentImage);
+            contentImageUrl = (await saveImage(contentImage)).s3Key;
         }
 
         const updatedPostDto = { title, content, contentImageUrl };
@@ -334,7 +334,7 @@ class PostController {
             author: {
                 id: author.id,
                 name: author.nickname,
-                profileImageUrl: author.profileImageUrl,
+                profileImageUrl: await getPreSignedUrl(author.profileImageUrl),
             },
         };
 
@@ -364,7 +364,7 @@ class PostController {
             author: {
                 id: author.id,
                 name: author.nickname,
-                profileImageUrl: author.profileImageUrl,
+                profileImageUrl: await getPreSignedUrl(author.profileImageUrl),
             },
         };
 
