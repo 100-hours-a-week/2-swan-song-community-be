@@ -96,10 +96,10 @@ class MariaDbViewHistoryDao extends IViewHistoryDao {
     }
 
     async createViewHistory(conn, viewHistory) {
-        const { userId, postId, viewedAt } = viewHistory;
+        const { userId, postId } = viewHistory;
         const rows = await conn.query(
             'INSERT INTO view_history (userId, postId) VALUES (?, ?) RETURNING *',
-            [userId, postId, viewedAt],
+            [userId, postId],
         );
         return rows[0];
     }
