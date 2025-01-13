@@ -43,12 +43,7 @@ class AuthController {
 
         const s3Key = profileImage && (await saveImage(profileImage)).s3Key;
 
-        const newUser = new User(
-            email,
-            nickname,
-            hashedPassword,
-            s3Key,
-        );
+        const newUser = new User(email, nickname, hashedPassword, s3Key);
         const userId = await userDao.createUser(conn, newUser);
 
         const data = { userId };

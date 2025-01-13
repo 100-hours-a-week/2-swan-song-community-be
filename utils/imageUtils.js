@@ -1,7 +1,12 @@
 import 'express-async-errors';
 import fs from 'fs';
 
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import {
+    S3Client,
+    PutObjectCommand,
+    GetObjectCommand,
+    DeleteObjectCommand,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 import logger from './logger.js';
@@ -10,7 +15,7 @@ import { ErrorResponse } from '../dto/errorResponse.js';
 
 const BUCKET_NAME = process.env.BUCKET_NAME;
 
-const s3Client = new S3Client({profile: "param"});
+const s3Client = new S3Client({ profile: 'param' });
 
 export const saveImage = async image => {
     if (!image || !image.path || !image.filename) {
@@ -40,7 +45,9 @@ export const saveImage = async image => {
             Key: s3Key,
         });
 
-        const preSignedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 }); // 1시간 유효
+        const preSignedUrl = await getSignedUrl(s3Client, command, {
+            expiresIn: 3600,
+        }); // 1시간 유효
         return { s3Key, preSignedUrl };
     } catch (error) {
         logger.error(`이미지 업로드 중 오류 발생: ${error.message}`);
@@ -81,4 +88,3 @@ export const deleteImage = async imagePath => {
         throw new ErrorResponse(500, 5000, '이미지 삭제 중 오류 발생', null);
     }
 };
-

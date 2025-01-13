@@ -17,7 +17,11 @@ import { Comment } from '../model/comment.js';
 import { ViewHistory } from '../model/viewHistory.js';
 import { PostLike } from '../model/postLike.js';
 
-import { saveImage, getPreSignedUrl, deleteImage } from '../utils/imageUtils.js';
+import {
+    saveImage,
+    getPreSignedUrl,
+    deleteImage,
+} from '../utils/imageUtils.js';
 import { formatDateTime } from '../utils/dateTimeUtils.js';
 
 class PostController {
@@ -62,11 +66,15 @@ class PostController {
             postId: post.id,
             title: post.title,
             content: post.content,
-            imageUrl: post.contentImageUrl && await getPreSignedUrl(post.contentImageUrl),
+            imageUrl:
+                post.contentImageUrl &&
+                (await getPreSignedUrl(post.contentImageUrl)),
             author: {
                 id: author.id,
                 name: author.nickname,
-                profileImageUrl: author.profileImageUrl && await getPreSignedUrl(author.profileImageUrl),
+                profileImageUrl:
+                    author.profileImageUrl &&
+                    (await getPreSignedUrl(author.profileImageUrl)),
             },
             isLiked: await postLikeDao.existsByUserIdAndPostId(
                 conn,
@@ -98,7 +106,9 @@ class PostController {
                         author: {
                             id: author.id,
                             name: author.nickname,
-                            profileImageUrl: author.profileImageUrl && await getPreSignedUrl(author.profileImageUrl),
+                            profileImageUrl:
+                                author.profileImageUrl &&
+                                (await getPreSignedUrl(author.profileImageUrl)),
                         },
                     };
                 }),
@@ -142,7 +152,9 @@ class PostController {
                     author: {
                         id: author.id,
                         name: author.nickname,
-                        profileImageUrl: author.profileImageUrl && await getPreSignedUrl(author.profileImageUrl),
+                        profileImageUrl:
+                            author.profileImageUrl &&
+                            (await getPreSignedUrl(author.profileImageUrl)),
                     },
                 };
             }),
@@ -196,7 +208,9 @@ class PostController {
             author: {
                 id: author.id,
                 name: author.nickname,
-                profileImageUrl: author.profileImageUrl && await getPreSignedUrl(author.profileImageUrl),
+                profileImageUrl:
+                    author.profileImageUrl &&
+                    (await getPreSignedUrl(author.profileImageUrl)),
             },
         };
         return new ApiResponse(201, 2001, '게시글 추가 성공', data);
@@ -333,7 +347,9 @@ class PostController {
             author: {
                 id: author.id,
                 name: author.nickname,
-                profileImageUrl: author.profileImageUrl && await getPreSignedUrl(author.profileImageUrl),
+                profileImageUrl:
+                    author.profileImageUrl &&
+                    (await getPreSignedUrl(author.profileImageUrl)),
             },
         };
 
@@ -363,7 +379,9 @@ class PostController {
             author: {
                 id: author.id,
                 name: author.nickname,
-                profileImageUrl: author.profileImageUrl && await getPreSignedUrl(author.profileImageUrl),
+                profileImageUrl:
+                    author.profileImageUrl &&
+                    (await getPreSignedUrl(author.profileImageUrl)),
             },
         };
 

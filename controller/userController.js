@@ -8,7 +8,11 @@ import { ErrorResponse } from '../dto/errorResponse.js';
 // DAO
 import { userDao } from '../dao/userDaos.js';
 
-import { saveImage, getPreSignedUrl, deleteImage } from '../utils/imageUtils.js';
+import {
+    saveImage,
+    getPreSignedUrl,
+    deleteImage,
+} from '../utils/imageUtils.js';
 import { formatDateTime } from '../utils/dateTimeUtils.js';
 
 class UserController {
@@ -23,7 +27,9 @@ class UserController {
             userId: user.id,
             email: user.email,
             nickname: user.nickname,
-            profileImageUrl: user.profileImageUrl && await getPreSignedUrl(user.profileImageUrl),
+            profileImageUrl:
+                user.profileImageUrl &&
+                (await getPreSignedUrl(user.profileImageUrl)),
             createdDateTime: formatDateTime(user.createdDateTime),
         };
         return new ApiResponse(200, 2000, '사용자 정보 조회 성공', data);
@@ -54,9 +60,8 @@ class UserController {
 
         let preSignedUrl = null;
         if (profileImage) {
-            const { s3Key: newS3Key, preSignedUrl: newPreSignedUrl } = await saveImage(
-                profileImage,
-            );
+            const { s3Key: newS3Key, preSignedUrl: newPreSignedUrl } =
+                await saveImage(profileImage);
             profileImageUrl = newS3Key;
             preSignedUrl = newPreSignedUrl;
         }
