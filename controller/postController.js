@@ -67,14 +67,14 @@ class PostController {
             title: post.title,
             content: post.content,
             imageUrl:
-                post.contentImageUrl &&
-                (await getPreSignedUrl(post.contentImageUrl)),
+                post.contentImageKey &&
+                (await getPreSignedUrl(post.contentImageKey)),
             author: {
                 id: author.id,
                 name: author.nickname,
                 profileImageUrl:
-                    author.profileImageUrl &&
-                    (await getPreSignedUrl(author.profileImageUrl)),
+                    author.profileImageKey &&
+                    (await getPreSignedUrl(author.profileImageKey)),
             },
             isLiked: await postLikeDao.existsByUserIdAndPostId(
                 conn,
@@ -107,8 +107,8 @@ class PostController {
                             id: author.id,
                             name: author.nickname,
                             profileImageUrl:
-                                author.profileImageUrl &&
-                                (await getPreSignedUrl(author.profileImageUrl)),
+                                author.profileImageKey &&
+                                (await getPreSignedUrl(author.profileImageKey)),
                         },
                     };
                 }),
@@ -153,8 +153,8 @@ class PostController {
                         id: author.id,
                         name: author.nickname,
                         profileImageUrl:
-                            author.profileImageUrl &&
-                            (await getPreSignedUrl(author.profileImageUrl)),
+                            author.profileImageKey &&
+                            (await getPreSignedUrl(author.profileImageKey)),
                     },
                 };
             }),
@@ -209,8 +209,8 @@ class PostController {
                 id: author.id,
                 name: author.nickname,
                 profileImageUrl:
-                    author.profileImageUrl &&
-                    (await getPreSignedUrl(author.profileImageUrl)),
+                    author.profileImageKey &&
+                    (await getPreSignedUrl(author.profileImageKey)),
             },
         };
         return new ApiResponse(201, 2001, '게시글 추가 성공', data);
@@ -225,18 +225,22 @@ class PostController {
             throw new ErrorResponse(200, 4003, '권한이 없습니다', null);
         }
 
-        let contentImageUrl = currentPost.contentImageUrl;
+        let contentImageKey = currentPost.contentImageKey;
 
-        if (isRemoveImage === true && contentImageUrl) {
-            deleteImage(currentPost.contentImageUrl);
-            contentImageUrl = null;
+        if (isRemoveImage === true && contentImageKey) {
+            deleteImage(currentPost.contentImageKey);
+            contentImageKey = null;
         }
 
-        if (contentImageUrl === null && contentImage) {
-            contentImageUrl = (await saveImage(contentImage)).s3Key;
+        if (contentImageKey === null && contentImage) {
+            contentImageKey = (await saveImage(contentImage)).s3Key;
         }
 
-        const updatedPostDto = { title, content, contentImageUrl };
+        const updatedPostDto = {
+            title,
+            content,
+            contentImageKey: contentImageKey,
+        };
         const updatedPost = await this.postDao.updatePost(
             conn,
             postId,
@@ -278,8 +282,8 @@ class PostController {
 
         await this.postDao.deletePost(conn, post);
 
-        if (post.contentImageUrl) {
-            deleteImage(post.contentImageUrl);
+        if (post.contentImageKey) {
+            deleteImage(post.contentImageKey);
         }
         return new ApiResponse(204);
     }
@@ -348,8 +352,8 @@ class PostController {
                 id: author.id,
                 name: author.nickname,
                 profileImageUrl:
-                    author.profileImageUrl &&
-                    (await getPreSignedUrl(author.profileImageUrl)),
+                    author.profileImageKey &&
+                    (await getPreSignedUrl(author.profileImageKey)),
             },
         };
 
@@ -380,8 +384,8 @@ class PostController {
                 id: author.id,
                 name: author.nickname,
                 profileImageUrl:
-                    author.profileImageUrl &&
-                    (await getPreSignedUrl(author.profileImageUrl)),
+                    author.profileImageKey &&
+                    (await getPreSignedUrl(author.profileImageKey)),
             },
         };
 

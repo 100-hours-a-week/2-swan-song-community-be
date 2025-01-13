@@ -28,8 +28,8 @@ class UserController {
             email: user.email,
             nickname: user.nickname,
             profileImageUrl:
-                user.profileImageUrl &&
-                (await getPreSignedUrl(user.profileImageUrl)),
+                user.profileImageKey &&
+                (await getPreSignedUrl(user.profileImageKey)),
             createdDateTime: formatDateTime(user.createdDateTime),
         };
         return new ApiResponse(200, 2000, '사용자 정보 조회 성공', data);
@@ -52,23 +52,23 @@ class UserController {
             );
         }
 
-        let profileImageUrl = user.profileImageUrl;
-        if (isProfileImageRemoved && user.profileImageUrl) {
-            deleteImage(user.profileImageUrl);
-            profileImageUrl = null;
+        let profileImageKey = user.profileImageKey;
+        if (isProfileImageRemoved && user.profileImageKey) {
+            deleteImage(user.profileImageKey);
+            profileImageKey = null;
         }
 
         let preSignedUrl = null;
         if (profileImage) {
             const { s3Key: newS3Key, preSignedUrl: newPreSignedUrl } =
                 await saveImage(profileImage);
-            profileImageUrl = newS3Key;
+            profileImageKey = newS3Key;
             preSignedUrl = newPreSignedUrl;
         }
 
         const updatedUserDto = {
             nickname: nickname || user.nickname,
-            profileImageUrl: profileImageUrl,
+            profileImageKey: profileImageKey,
         };
 
         await this.userDao.updateUser(conn, userId, updatedUserDto);

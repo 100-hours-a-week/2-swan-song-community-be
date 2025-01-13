@@ -105,8 +105,8 @@ class AuthController {
 
         userDao.deleteUser(conn, user);
 
-        if (user.profileImageUrl) {
-            deleteImage(user.profileImageUrl);
+        if (user.profileImageKey) {
+            deleteImage(user.profileImageKey);
         }
 
         removeSession(sessionId);

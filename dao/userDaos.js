@@ -79,7 +79,7 @@ class InMemoryUserDao extends IUserDao {
         const user = this.findById(userId);
 
         user.nickname = updatedUserDto.nickname;
-        user.profileImageUrl = updatedUserDto.profileImageUrl;
+        user.profileImageKey = updatedUserDto.profileImageKey;
         flush(userJsonFilename, this.users);
     }
 
@@ -131,19 +131,19 @@ class MariaDbUserDao extends IUserDao {
     }
 
     async createUser(conn, user) {
-        const { email, nickname, password, profileImageUrl } = user;
+        const { email, nickname, password, profileImageKey } = user;
         const result = await conn.query(
-            'INSERT INTO user (email, nickname, password, profileImageUrl) VALUES (?, ?, ?, ?)',
-            [email, nickname, password, profileImageUrl],
+            'INSERT INTO user (email, nickname, password, profileImageKey) VALUES (?, ?, ?, ?)',
+            [email, nickname, password, profileImageKey],
         );
         return result.insertId;
     }
 
     async updateUser(conn, userId, updatedUserDto) {
-        const { nickname, profileImageUrl } = updatedUserDto;
+        const { nickname, profileImageKey } = updatedUserDto;
         await conn.query(
-            'UPDATE user SET nickname = ?, profileImageUrl = ? WHERE id = ?',
-            [nickname, profileImageUrl, userId],
+            'UPDATE user SET nickname = ?, profileImageKey = ? WHERE id = ?',
+            [nickname, profileImageKey, userId],
         );
     }
 

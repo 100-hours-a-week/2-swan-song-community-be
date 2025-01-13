@@ -95,11 +95,15 @@ class InMemoryPostDao extends IPostDao {
 
     updatePost(postId, updatedPostDto) {
         const post = this.findById(postId);
-        const { title, content, contentImageUrl } = updatedPostDto;
+        const {
+            title,
+            content,
+            contentImageKey: contentImageKey,
+        } = updatedPostDto;
 
         post.title = title;
         post.content = content;
-        post.contentImageUrl = contentImageUrl;
+        post.contentImageKey = contentImageKey;
         flush(postJsonFilename, this.posts);
         return post;
     }
@@ -143,11 +147,16 @@ class MariaDbPostDao extends IPostDao {
     }
 
     async createPost(conn, post) {
-        const { title, content, contentImageUrl, authorId } = post;
+        const {
+            title,
+            content,
+            contentImageKey: contentImageKey,
+            authorId,
+        } = post;
 
         const rows = await conn.query(
-            'INSERT INTO post (title, content, contentImageUrl, authorId) VALUES (?, ?, ?, ?) RETURNING *',
-            [title, content, contentImageUrl, authorId],
+            'INSERT INTO post (title, content, contentImageKey, authorId) VALUES (?, ?, ?, ?) RETURNING *',
+            [title, content, contentImageKey, authorId],
         );
 
         return rows[0];
@@ -174,11 +183,11 @@ class MariaDbPostDao extends IPostDao {
     }
 
     async updatePost(conn, postId, updatedPostDto) {
-        const { title, content, contentImageUrl } = updatedPostDto;
+        const { title, content, contentImageKey } = updatedPostDto;
 
         const result = await conn.query(
-            'UPDATE post SET title = ?, content = ?, contentImageUrl = ? WHERE id = ?',
-            [title, content, contentImageUrl, postId],
+            'UPDATE post SET title = ?, content = ?, contentImageKey = ? WHERE id = ?',
+            [title, content, contentImageKey, postId],
         );
 
         if (result.affectedRows === 0) {
@@ -190,7 +199,7 @@ class MariaDbPostDao extends IPostDao {
             );
         }
 
-        return { id: postId, title, content, contentImageUrl };
+        return { id: postId, title, content, contentImageKey };
     }
 
     async deletePost(conn, post) {
