@@ -1,40 +1,35 @@
 import mariadb from 'mariadb';
 import logger from '../utils/logger.js';
-import fs from 'fs';
+import dotenv from 'dotenv';
 
-const defaultConfig = {
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_DATABASE,
-    connectionLimit: process.env.DB_CONNECTION_LIMIT,
-};
+// .env 파일 로드
+dotenv.config();
 
-const CONFIG_FILE = './credential.json';
-
-function loadConfig() {
-    try {
-        if (fs.existsSync(CONFIG_FILE)) {
-            const fileConfig = JSON.parse(
-                fs.readFileSync(CONFIG_FILE, 'utf-8'),
-            );
-            return fileConfig.db;
-        } else {
-            return defaultConfig;
-        }
-    } catch (err) {
-        return defaultConfig;
+function getEnvVar(name) {
+    const value = process.env[name];
+    if (!value) {
+        throw new Error(
+            `Environment variable ${name} is required but not set.`,
+        );
     }
+    return value;
 }
 
-const config = loadConfig();
+// 필수 환경변수 로드
+const config = {
+    host: getEnvVar('DB_URL'),
+    port: parseInt(getEnvVar('DB_PORT'), 10),
+    user: getEnvVar('DB_USER'),
+    password: getEnvVar('DB_PASSWORD'),
+    database: getEnvVar('DB_DATABASE'),
+    connectionLimit: parseInt(getEnvVar('DB_CONNECTION_LIMIT'), 10),
+};
 
 const pool = mariadb.createPool(config);
 
 async function asyncFunction() {
     logger.info(
-        `{DB_HOST: ${config.host}, DB_PORT: ${config.port}, DB_USER: ${config.user}, DB_DATABASE: ${config.database}}, DB_CONNECTION_LIMIT: ${config.connectionLimit}`,
+        `DB Configuration: {DB_HOST: ${config.host}, DB_PORT: ${config.port}, DB_USER: ${config.user}, DB_DATABASE: ${config.database}, DB_CONNECTION_LIMIT: ${config.connectionLimit}}`,
     );
     let conn;
     try {
