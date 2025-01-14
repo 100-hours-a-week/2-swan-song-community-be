@@ -78,7 +78,7 @@ class AuthController {
         const sessionId = addSession(user);
         const sessionOptions = {
             maxAge: 1000 * 60 * 60 * 24 * 7, // 7일
-            sameSite: 'Strict',
+            sameSite: 'None',
             secure: false,
         };
 
