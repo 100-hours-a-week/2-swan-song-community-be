@@ -15,7 +15,7 @@ import { ErrorResponse } from '../dto/errorResponse.js';
 
 const BUCKET_NAME = process.env.BUCKET_NAME;
 
-const s3Client = new S3Client({ profile: 'param' });
+const s3Client = new S3Client();
 
 export const saveImage = async image => {
     if (!image || !image.path || !image.filename) {
