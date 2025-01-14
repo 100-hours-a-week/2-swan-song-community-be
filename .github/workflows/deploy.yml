@@ -1,0 +1,59 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to GitHub Container Registry
+        run: echo ${{ secrets.GHCR_PAT }} | docker login ghcr.io -u ${{ secrets.REPOSITORY_OWNER }} --password-stdin
+
+      - name: Build and push Docker image
+        run: |
+          TAG=${{ github.sha }}
+          docker buildx build \
+            --platform linux/amd64 \
+            --push \
+            -t ghcr.io/${{ secrets.REPOSITORY_OWNER }}/community-server:${TAG} \
+            -t ghcr.io/${{ secrets.REPOSITORY_OWNER }}/community-server:latest .
+
+  deploy:
+    needs: [build-and-push]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare SSH Key
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY }}" | base64 --decode > key.pem
+          chmod 600 key.pem
+
+      - name: SSH into EC2 and pull/run container
+        run: |
+          HOST=${{ secrets.EC2_HOST }}
+          USER=${{ secrets.EC2_USER }}
+          TAG=${{ github.sha }}
+
+          ssh -o StrictHostKeyChecking=no -i key.pem $USER@$HOST "
+            set -e
+            docker rm -f community-server || true
+            docker login ghcr.io -u ${{ secrets.REPOSITORY_OWNER }} -p ${{ secrets.GHCR_PAT }}
+            docker pull ghcr.io/${{ secrets.REPOSITORY_OWNER }}/community-server:${TAG}
+            aws ssm get-parameter --name /ktb-community/prod/config/server --with-decryption --query 'Parameter.Value' --output text > env_file
+            docker run -d --name community-server --env-file env_file -p 8181:8181 ghcr.io/${{ secrets.REPOSITORY_OWNER }}/community-server:${TAG}
+            rm -f env_file
+          "
+
+      - name: Clean up SSH Key
+        run: rm -f key.pem
