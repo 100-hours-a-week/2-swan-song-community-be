@@ -1,5 +1,7 @@
 import express from 'express';
 import 'express-async-errors';
+import fs from 'fs';
+import https from 'https';
 
 import './config/connect.js';
 import './config/json.js';
@@ -23,6 +25,18 @@ const env = process.env.NODE_ENV;
 
 app.use(express.json());
 app.use(bodyParser.json());
+
+
+const privateKey = process.env.PRIVKEY;
+const certificate = process.env.FULLCHAIN;
+const sslOptions = {
+    key: fs.readFileSync(privateKey),
+    cert: fs.readFileSync(certificate)
+};
+
+https.createServer(sslOptions, app).listen(443, () => {
+    console.log('HTTPS 서버가 443 포트에서 실행 중입니다');
+});
 
 // CORS 설정: 3000 포트에서만 허용
 const corsOptions = {
