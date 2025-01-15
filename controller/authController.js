@@ -79,7 +79,8 @@ class AuthController {
         const sessionOptions = {
             maxAge: 1000 * 60 * 60 * 24 * 7, // 7일
             sameSite: 'Strict',
-            secure: false,
+            domain: `.${process.env.ROOT_DOMAIN}`,
+            secure: true,
         };
 
         res.cookie('session_id', sessionId, sessionOptions);
