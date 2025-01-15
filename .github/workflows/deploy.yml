@@ -48,7 +48,7 @@ jobs:
             docker rm -f community-server || true
             docker login ghcr.io -u ${{ secrets.REPOSITORY_OWNER }} -p ${{ secrets.GHCR_PAT }}
             docker pull ghcr.io/${{ secrets.REPOSITORY_OWNER }}/community-server:${TAG}
-            aws ssm get-parameter --name /ktb-community/prod/config/server --with-decryption --query 'Parameter.Value' --output text > env_file
+            aws ssm get-parameter --name ${{ secrets.PARAMETER_NAME}} --with-decryption --query 'Parameter.Value' --output text > env_file
             docker run -d --name community-server --env-file env_file -p 8181:8181 ghcr.io/${{ secrets.REPOSITORY_OWNER }}/community-server:${TAG}
             rm -f env_file
           "
