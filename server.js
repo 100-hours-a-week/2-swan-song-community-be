@@ -16,6 +16,7 @@ import authRouter from './routes/authRouter.js';
 import userRouter from './routes/userRouter.js';
 import postRouter from './routes/postRouter.js';
 import cors from 'cors';
+import multer from 'multer';
 
 const app = express();
 dotenv.config();
@@ -26,17 +27,11 @@ const env = process.env.NODE_ENV;
 app.use(express.json());
 app.use(bodyParser.json());
 
-
-const privateKey = process.env.PRIVKEY;
-const certificate = process.env.FULLCHAIN;
-const sslOptions = {
-    key: fs.readFileSync(privateKey),
-    cert: fs.readFileSync(certificate)
-};
-
-https.createServer(sslOptions, app).listen(443, () => {
-    console.log('HTTPS 서버가 443 포트에서 실행 중입니다');
+const healthRouter = express.Router();
+healthRouter.get('/health', (req, res) => {
+    res.status(200).json({ message: 'OK' });
 });
+app.use(healthRouter);
 
 // CORS 설정: 3000 포트에서만 허용
 const corsOptions = {
