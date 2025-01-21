@@ -90,12 +90,12 @@ postRouter.get('/', async (req, res) => {
 // 댓글 추가
 postRouter.post('/comments', async (req, res) => {
     const postId = parseInt(req.body.postId);
-    const content = req.body.content;
+    const content = req.body.content.trim();
     const user = await withTransaction(
         async conn => await getLoggedInUser(conn, req.cookies.session_id),
     );
 
-    if (!postId || !content) {
+    if (!postId || !content || content.length < 1) {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
@@ -117,12 +117,12 @@ postRouter.post('/comments', async (req, res) => {
 // 댓글 수정
 postRouter.put('/comments', async (req, res) => {
     const commentId = parseInt(req.body.commentId);
-    const content = req.body.content;
+    const content = req.body.content.trim();
     const user = await withTransaction(
         async conn => await getLoggedInUser(conn, req.cookies.session_id),
     );
 
-    if (!content || isNaN(commentId) || commentId < 1) {
+    if (!content || content.length < 1 || isNaN(commentId) || commentId < 1) {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
@@ -197,14 +197,23 @@ postRouter.delete('/likes', async (req, res) => {
 
 // 게시글 추가
 postRouter.post('/', upload.single('postImage'), async (req, res) => {
-    const { title, content } = req.body;
+    const title = req.body.title.trim();
+    const content = req.body.content.trim();
     const contentImage = req.file;
     const user = await withTransaction(
         async conn => await getLoggedInUser(conn, req.cookies.session_id),
     );
 
-    if (!title || !content) {
+    if (!title || title.length < 1 || !content || content.length < 1) {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
+    }
+
+    if (title.length > 26) {
+        throw new ErrorResponse(400, 4000, `제목은 26자 이하로 작성해주세요. 현재 길이 : ${title.length}`, null);
+    }
+
+    if (content.length > 1000) {
+        throw new ErrorResponse(400, 4000, `게시글은 1000자 이하로 작성해주세요. 현재 길이 : ${content.length}`, null);
     }
 
     const apiResponse = await withTransaction(
@@ -222,15 +231,25 @@ postRouter.post('/', upload.single('postImage'), async (req, res) => {
 // 게시글 수정
 postRouter.put('/:postId', upload.single('postImage'), async (req, res) => {
     const postId = parseInt(req.params.postId);
-    const { title, content, removeImageFlag } = req.body;
+    const title = req.body.title.trim();
+    const content = req.body.content.trim();
+    const removeImageFlag = req.body.removeImageFlag;
     const isRemoveImage = removeImageFlag === 'true';
     const contentImage = req.file;
     const user = await withTransaction(
         async conn => await getLoggedInUser(conn, req.cookies.session_id),
     );
 
-    if (!title || !content || isNaN(postId) || postId < 1) {
+    if (!title || title.length < 1 || !content || content.length < 1 || isNaN(postId) || postId < 1) {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
+    }
+
+    if (title.length > 26) {
+        throw new ErrorResponse(400, 4000, `제목은 26자 이하로 작성해주세요. 현재 길이 : ${title.length}`, null);
+    }
+
+    if (content.length > 1000) {
+        throw new ErrorResponse(400, 4000, `게시글은 1000자 이하로 작성해주세요. 현재 길이 : ${content.length}`, null);
     }
 
     const apiResponse = await withTransaction(
