@@ -28,13 +28,26 @@ authRouter.use(cookieParser());
 
 // 회원가입
 authRouter.post('/signup', upload.single('profileImage'), async (req, res) => {
-    const { email, password, passwordChecker, nickname } = req.body;
+    const email = req.body.email.trim();
+    const password = req.body.password.trim();
+    const passwordChecker = req.body.passwordChecker.trim();
+    const nickname = req.body.nickname.trim();
+
 
     const profileImage = req.file;
 
     // 필수 입력값 확인
     if (!email || !password || !passwordChecker || !nickname) {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
+    }
+
+    if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
+        throw new ErrorResponse(
+            400,
+            4000,
+            '이메일 형식이 올바르지 않습니다',
+            null,
+        );
     }
 
     // 비밀번호가 Base64 인코딩인지 확인
