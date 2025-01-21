@@ -99,6 +99,10 @@ postRouter.post('/comments', async (req, res) => {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
+    if (content.length > 300) {
+        throw new ErrorResponse(400, 4000, `댓글은 300자 이하로 작성해주세요. 현재 길이 : ${content.length}`, null);
+    }
+
     const apiResponse = await withTransaction(
         async conn =>
             await postController.createPostComment(conn, {
@@ -120,6 +124,10 @@ postRouter.put('/comments', async (req, res) => {
 
     if (!content || isNaN(commentId) || commentId < 1) {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
+    }
+
+    if (content.length > 300) {
+        throw new ErrorResponse(400, 4000, `댓글은 300자 이하로 작성해주세요. 현재 길이 : ${content.length}`, null);
     }
 
     const apiResponse = await withTransaction(
