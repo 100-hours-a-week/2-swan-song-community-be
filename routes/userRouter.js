@@ -52,7 +52,7 @@ userRouter.get('/me', async (req, res) => {
 
 // 회원정보 수정
 userRouter.put('/me', upload.single('profileImage'), async (req, res) => {
-    const nickname = req.body.nickname;
+    const nickname = req.body.nickname.trim();
     const isProfileImageRemoved = req.body.isProfileImageRemoved === 'true';
     const profileImage = req.file;
     const sessionId = req.cookies.session_id;

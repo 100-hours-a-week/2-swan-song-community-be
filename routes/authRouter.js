@@ -103,7 +103,7 @@ authRouter.post('/signup', upload.single('profileImage'), async (req, res) => {
 
 // 닉네임 중복 여부 조회
 authRouter.get('/check-nickname', async (req, res) => {
-    const { nickname } = req.query;
+    const nickname = req.query.nickname.trim();
 
     if (!nickname) {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
@@ -126,7 +126,8 @@ authRouter.get('/check-nickname', async (req, res) => {
 
 // 로그인
 authRouter.post('/signin', upload.none(), async (req, res) => {
-    const { email, password } = req.body;
+    const email = req.body.email.trim();
+    const password = req.body.password.trim();
     const sessionIdToRemove = req.cookies.session_id; // 기존에 발급된 세션 ID
 
     // 필수 입력값 확인
