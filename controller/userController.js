@@ -96,6 +96,15 @@ class UserController {
 
         const hashedPassword = await bcrypt.hash(newPassword, 10);
 
+        const currentPassword = (await this.userDao.findById(conn, userId)).password;
+        if (await bcrypt.compare(newPassword, currentPassword)) {
+            throw new ErrorResponse(
+                200,
+                4000,
+                '현재 비밀번호와 달라야합니다.'
+            );
+        }
+
         await this.userDao.updateUserPassword(conn, userId, hashedPassword);
 
         const data = {
