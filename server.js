@@ -73,8 +73,7 @@ app.use((err, req, res, next) => {
         });
     }
 
-
-    if (err.message === "Input buffer contains unsupported image format") {
+    if (err.message === 'Input buffer contains unsupported image format') {
         return res.status(200).json({
             code: 400,
             message: '허용되지 않은 파일 형식입니다.',
