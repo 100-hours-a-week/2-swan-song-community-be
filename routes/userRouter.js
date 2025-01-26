@@ -138,11 +138,27 @@ userRouter.patch('/me/password', async (req, res) => {
     const decodedPassword = Buffer.from(newPassword, 'base64').toString(
         'utf-8',
     );
-    if (decodedPassword.length < 8 || decodedPassword.length > 20) {
+
+    const isValidLength =
+        decodedPassword.length >= 8 && decodedPassword.length <= 20;
+    const hasNumber = /[0-9]/.test(decodedPassword);
+    const hasUpperCase = /[A-Z]/.test(decodedPassword);
+    const hasLowerCase = /[a-z]/.test(decodedPassword);
+    const hasSpecialChar = /[!@#$%^&*(),.?":;{}|<>]/.test(decodedPassword);
+    const hasNoSpace = !/\s/.test(decodedPassword); // 공백이 없어야 함
+
+    if (
+        !isValidLength ||
+        !hasNumber ||
+        !hasUpperCase ||
+        !hasLowerCase ||
+        !hasSpecialChar ||
+        !hasNoSpace
+    ) {
         throw new ErrorResponse(
             400,
             4000,
-            '비밀번호는 8자 이상 20자 이하이어야 합니다',
+            '비밀번호는 8자 이상 20자 이하이며, 공백 없이 특수문자, 대문자 영어, 소문자 영어, 숫자를 각각 하나 이상 포함해야 합니다',
             null,
         );
     }
