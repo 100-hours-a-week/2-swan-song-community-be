@@ -40,6 +40,15 @@ class UserController {
 
         const user = await this.userDao.findById(conn, userId);
 
+        if (user.nickname === nickname) {
+            throw new ErrorResponse(
+                200,
+                4009,
+                '기존 닉네임과 동일합니다',
+                null,
+            );
+        }
+
         if (
             user.nickname !== nickname &&
             (await this.userDao.findByNickname(conn, nickname))

@@ -92,7 +92,7 @@ postRouter.get('/', async (req, res) => {
 // 댓글 추가
 postRouter.post('/comments', async (req, res) => {
     const postId = parseInt(req.body.postId);
-    const content = req.body.content.trim();
+    const content = req.body.content?.trim() || null;
     const user = await withTransaction(
         async conn => await getLoggedInUser(conn, req.cookies.session_id),
     );
@@ -119,7 +119,7 @@ postRouter.post('/comments', async (req, res) => {
 // 댓글 수정
 postRouter.put('/comments', async (req, res) => {
     const commentId = parseInt(req.body.commentId);
-    const content = req.body.content.trim();
+    const content = req.body.content?.trim() || null;
     const user = await withTransaction(
         async conn => await getLoggedInUser(conn, req.cookies.session_id),
     );
@@ -199,8 +199,8 @@ postRouter.delete('/likes', async (req, res) => {
 
 // 게시글 추가
 postRouter.post('/', upload.single('postImage'), async (req, res) => {
-    const title = req.body.title.trim();
-    const content = req.body.content.trim();
+    const title = req.body.title?.trim() || null;
+    const content = req.body.content?.trim() || null;
     const contentImage = req.file;
     const user = await withTransaction(
         async conn => await getLoggedInUser(conn, req.cookies.session_id),
@@ -233,8 +233,8 @@ postRouter.post('/', upload.single('postImage'), async (req, res) => {
 // 게시글 수정
 postRouter.put('/:postId', upload.single('postImage'), async (req, res) => {
     const postId = parseInt(req.params.postId);
-    const title = req.body.title.trim();
-    const content = req.body.content.trim();
+    const title = req.body.title?.trim() || null;
+    const content = req.body.content?.trim() || null;
     const removeImageFlag = req.body.removeImageFlag;
     const isRemoveImage = removeImageFlag === 'true';
     const contentImage = req.file;

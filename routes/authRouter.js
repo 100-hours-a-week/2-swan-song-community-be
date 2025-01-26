@@ -28,10 +28,10 @@ authRouter.use(cookieParser());
 
 // 회원가입
 authRouter.post('/signup', upload.single('profileImage'), async (req, res) => {
-    const email = req.body.email.trim();
-    const password = req.body.password.trim();
-    const passwordChecker = req.body.passwordChecker.trim();
-    const nickname = req.body.nickname.trim();
+    const email = req.body.email?.trim() || null;
+    const password = req.body.password?.trim() || null;
+    const passwordChecker = req.body.passwordChecker?.trim() || null;
+    const nickname = req.body.nickname?.trim() || null;
 
 
     const profileImage = req.file;
@@ -80,11 +80,11 @@ authRouter.post('/signup', upload.single('profileImage'), async (req, res) => {
         );
     }
 
-    if (nickname.length < 1 || nickname.length > 10) {
+    if (!( /^[^\s]{1,10}$/.test(nickname))) {
         throw new ErrorResponse(
             400,
             4000,
-            '닉네임은 1자 이상 10자 이하이어야 합니다',
+            '닉네임은 공백 없이 1자 이상 10자 이하이어야 합니다',
             null,
         );
     }
@@ -103,7 +103,7 @@ authRouter.post('/signup', upload.single('profileImage'), async (req, res) => {
 
 // 닉네임 중복 여부 조회
 authRouter.get('/check-nickname', async (req, res) => {
-    const nickname = req.query.nickname.trim();
+    const nickname = req.query.nickname?.trim() || null;
 
     if (!nickname) {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
@@ -126,8 +126,8 @@ authRouter.get('/check-nickname', async (req, res) => {
 
 // 로그인
 authRouter.post('/signin', upload.none(), async (req, res) => {
-    const email = req.body.email.trim();
-    const password = req.body.password.trim();
+    const email = req.body.email?.trim() || null;
+    const password = req.body.password?.trim() || null;
     const sessionIdToRemove = req.cookies.session_id; // 기존에 발급된 세션 ID
 
     // 필수 입력값 확인

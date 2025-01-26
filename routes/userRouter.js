@@ -54,7 +54,7 @@ userRouter.get('/me', async (req, res) => {
 
 // 회원정보 수정
 userRouter.put('/me', upload.single('profileImage'), async (req, res) => {
-    const nickname = req.body.nickname.trim();
+    const nickname = req.body.nickname ? req.body.nickname.trim() : null;
     const isProfileImageRemoved = req.body.isProfileImageRemoved === 'true';
     const profileImage = req.file;
     const sessionId = req.cookies.session_id;
@@ -62,11 +62,20 @@ userRouter.put('/me', upload.single('profileImage'), async (req, res) => {
         return await getLoggedInUser(conn, sessionId);
     });
 
-    if (
-        (!nickname || nickname === user.nickname) &&
-        isProfileImageRemoved === false &&
-        !profileImage
-    ) {
+    // 모순되는 조건 (반드시 실패)
+    if (nickname !== null && !( /^[^\s]{1,10}$/.test(nickname))) {
+        throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
+    }
+
+    if (user.profileImageKey && !isProfileImageRemoved && profileImage) {
+        throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
+    }
+
+    if (!user.profileImageKey && isProfileImageRemoved) {
+        throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
+    }
+
+    if (nickname === null && !isProfileImageRemoved && !profileImage) {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
