@@ -15,7 +15,9 @@ import { postController } from '../controller/postController.js';
 import { getLoggedInUser, isLoggedIn } from '../utils/authUtils.js';
 
 const postRouter = express.Router();
-const upload = multer({ dest: 'public/images/' }); // 이미지 업로드를 위한 multer 설정
+const upload = multer({
+    storage: multer.memoryStorage(),
+}); // 이미지 업로드를 위한 multer 설정
 
 // URL-encoded 데이터 파싱을 위한 미들웨어 추가
 postRouter.use(express.urlencoded({ extended: true }));

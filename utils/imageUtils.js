@@ -1,5 +1,4 @@
 import 'express-async-errors';
-import fs from 'fs';
 
 import {
     S3Client,
@@ -13,28 +12,22 @@ import logger from './logger.js';
 
 import { ErrorResponse } from '../dto/errorResponse.js';
 
+import { v4 as uuidv4 } from 'uuid';
+
 const BUCKET_NAME = process.env.BUCKET_NAME;
 
 const s3Client = new S3Client();
 
 export const saveImage = async image => {
-    if (!image || !image.path || !image.filename) {
-        throw new ErrorResponse(400, 4000, '유효하지 않은 파일입니다', null);
-    }
-
-    const { path: tempPath, filename, mimetype } = image;
-    const fileExtension = mimetype.split('/')[1];
-    const s3Key = `${filename}.${fileExtension}`; // S3에서의 파일 경로
+    const s3Key = `${Date.now()}_${uuidv4()}.${image.mimetype.split('/')[1]}`;
 
     try {
         // 파일을 읽어서 S3로 업로드
-        const fileStream = fs.createReadStream(tempPath);
-
         const uploadParams = {
             Bucket: BUCKET_NAME,
             Key: s3Key,
-            Body: fileStream,
-            ContentType: mimetype,
+            Body: image.buffer,
+            ContentType: image.mimetype,
         };
 
         await s3Client.send(new PutObjectCommand(uploadParams));
@@ -52,14 +45,6 @@ export const saveImage = async image => {
     } catch (error) {
         logger.error(`이미지 업로드 중 오류 발생: ${error.message}`);
         throw new ErrorResponse(500, 5000, '이미지 업로드 중 오류 발생', null);
-    } finally {
-        // 임시 파일 제거
-        try {
-            logger.info(`임시 파일 제거: ${tempPath}`);
-            await fs.promises.unlink(tempPath);
-        } catch (error) {
-            logger.error(`임시 파일 제거 중 오류 발생: ${error.message}`);
-        }
     }
 };
 
