@@ -12,11 +12,12 @@ import cookieParser from 'cookie-parser';
 import { authController } from '../controller/authController.js';
 
 import { getLoggedInUser, isLoggedIn } from '../utils/authUtils.js';
-import { multipartImageProcessor, validateAndReturnExactImageContent } from '../middleware/MultipartImageProcessor.js';
+import {
+    multipartImageProcessor,
+    validateAndReturnExactImageContent,
+} from '../middleware/MultipartImageProcessor.js';
 
 const authRouter = express.Router();
-
-
 
 // URL-encoded 데이터 파싱을 위한 미들웨어 추가
 authRouter.use(express.urlencoded({ extended: true }));
@@ -26,93 +27,111 @@ authRouter.use(express.json());
 authRouter.use(cookieParser());
 
 // 회원가입
-authRouter.post('/signup', multipartImageProcessor.single('profileImage'), async (req, res) => {
-    const email = req.body.email.trim();
-    const password = req.body.password.trim();
-    const passwordChecker = req.body.passwordChecker.trim();
-    const nickname = req.body.nickname.trim();
+authRouter.post(
+    '/signup',
+    multipartImageProcessor.single('profileImage'),
+    async (req, res) => {
+        const email = req.body.email.trim();
+        const password = req.body.password.trim();
+        const passwordChecker = req.body.passwordChecker.trim();
+        const nickname = req.body.nickname.trim();
 
-    const profileImage = await validateAndReturnExactImageContent(req.file);
+        const profileImage = await validateAndReturnExactImageContent(req.file);
 
-    // 필수 입력값 확인
-    if (!email || !password || !passwordChecker || !nickname) {
-        throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
-    }
+        // 필수 입력값 확인
+        if (!email || !password || !passwordChecker || !nickname) {
+            throw new ErrorResponse(
+                400,
+                4000,
+                '유효하지 않은 요청입니다',
+                null,
+            );
+        }
 
-    if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
-        throw new ErrorResponse(
-            400,
-            4000,
-            '이메일 형식이 올바르지 않습니다',
-            null,
+        if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
+            throw new ErrorResponse(
+                400,
+                4000,
+                '이메일 형식이 올바르지 않습니다',
+                null,
+            );
+        }
+
+        // 비밀번호가 Base64 인코딩인지 확인
+        if (!/^[A-Za-z0-9+/=]+$/.test(password)) {
+            throw new ErrorResponse(
+                400,
+                4000,
+                '비밀번호는 Base64 인코딩 형식이어야 합니다',
+                null,
+            );
+        }
+
+        // 비밀번호 길이 확인
+        const decodedPassword = Buffer.from(password, 'base64').toString(
+            'utf-8',
         );
-    }
+        if (decodedPassword.length < 8 || decodedPassword.length > 20) {
+            throw new ErrorResponse(
+                400,
+                4000,
+                '비밀번호는 8자 이상 20자 이하이어야 합니다',
+                null,
+            );
+        }
 
-    // 비밀번호가 Base64 인코딩인지 확인
-    if (!/^[A-Za-z0-9+/=]+$/.test(password)) {
-        throw new ErrorResponse(
-            400,
-            4000,
-            '비밀번호는 Base64 인코딩 형식이어야 합니다',
-            null,
-        );
-    }
+        if (password !== passwordChecker) {
+            throw new ErrorResponse(
+                400,
+                4000,
+                '비밀번호가 일치하지 않습니다',
+                null,
+            );
+        }
 
-    // 비밀번호 길이 확인
-    const decodedPassword = Buffer.from(password, 'base64').toString('utf-8');
-    if (decodedPassword.length < 8 || decodedPassword.length > 20) {
-        throw new ErrorResponse(
-            400,
-            4000,
-            '비밀번호는 8자 이상 20자 이하이어야 합니다',
-            null,
-        );
-    }
+        if (!/^[^\s]{1,10}$/.test(nickname)) {
+            throw new ErrorResponse(
+                400,
+                4000,
+                '닉네임은 공백 없이 1자 이상 10자 이하이어야 합니다',
+                null,
+            );
+        }
 
-    if (password !== passwordChecker) {
-        throw new ErrorResponse(
-            400,
-            4000,
-            '비밀번호가 일치하지 않습니다',
-            null,
-        );
-    }
-
-    if (!( /^[^\s]{1,10}$/.test(nickname))) {
-        throw new ErrorResponse(
-            400,
-            4000,
-            '닉네임은 공백 없이 1자 이상 10자 이하이어야 합니다',
-            null,
-        );
-    }
-
-    const apiResponse = await withTransaction(async conn => {
-        return await authController.register(
-            conn,
-            email,
-            password,
-            nickname,
-            profileImage,
-        );
-    });
-    apiResponse.resolve(res);
-});
+        const apiResponse = await withTransaction(async conn => {
+            return await authController.register(
+                conn,
+                email,
+                password,
+                nickname,
+                profileImage,
+            );
+        });
+        apiResponse.resolve(res);
+    },
+);
 
 // 닉네임 중복 여부 조회
 authRouter.get('/check-nickname', async (req, res) => {
     const nickname = req.query.nickname?.trim() || null;
-
-    if (!nickname) {
-        throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
-    }
 
     if (nickname.length < 1 || nickname.length > 10) {
         throw new ErrorResponse(
             400,
             4000,
             '닉네임은 1자 이상 10자 이하이어야 합니다',
-            null,
+            { isAvailable: false },
+        );
+    }
+
+    if (!/^[^\s]{1,10}$/.test(nickname)) {
+        throw new ErrorResponse(
+            200,
+            4000,
+            '닉네임은 공백 없이 1자 이상 10자 이하이어야 합니다',
+            {
+                isAvailable: false,
+            },
         );
     }
 

@@ -73,6 +73,8 @@ class UserController {
                 await saveImage(profileImage);
             profileImageKey = newS3Key;
             preSignedUrl = newPreSignedUrl;
+        } else if (profileImageKey) {
+            preSignedUrl = await getPreSignedUrl(profileImageKey);
         }
 
         const updatedUserDto = {
@@ -84,7 +86,7 @@ class UserController {
 
         const data = {
             id: userId,
-            name: nickname,
+            name: nickname || user.nickname,
             profileImageUrl: preSignedUrl,
         };
 
