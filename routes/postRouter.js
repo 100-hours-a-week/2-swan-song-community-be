@@ -7,7 +7,7 @@ import { withTransaction } from '../utils/transactionManager.js';
 
 import { ErrorResponse } from '../dto/errorResponse.js';
 
-import multer from 'multer';
+import { multipartImageProcessor, validateAndReturnExactImageContent } from '../middleware/MultipartImageProcessor.js';
 import cookieParser from 'cookie-parser';
 
 import { postController } from '../controller/postController.js';
@@ -15,9 +15,6 @@ import { postController } from '../controller/postController.js';
 import { getLoggedInUser, isLoggedIn } from '../utils/authUtils.js';
 
 const postRouter = express.Router();
-const upload = multer({
-    storage: multer.memoryStorage(),
-}); // 이미지 업로드를 위한 multer 설정
 
 // URL-encoded 데이터 파싱을 위한 미들웨어 추가
 postRouter.use(express.urlencoded({ extended: true }));
@@ -92,7 +89,7 @@ postRouter.get('/', async (req, res) => {
 // 댓글 추가
 postRouter.post('/comments', async (req, res) => {
     const postId = parseInt(req.body.postId);
-    const content = req.body.content?.trim() || null;
+    const content = req.body.content.trim();
     const user = await withTransaction(
         async conn => await getLoggedInUser(conn, req.cookies.session_id),
     );
@@ -102,7 +99,12 @@ postRouter.post('/comments', async (req, res) => {
     }
 
     if (content.length > 300) {
-        throw new ErrorResponse(400, 4000, `댓글은 300자 이하로 작성해주세요. 현재 길이 : ${content.length}`, null);
+        throw new ErrorResponse(
+            400,
+            4000,
+            `댓글은 300자 이하로 작성해주세요. 현재 길이 : ${content.length}`,
+            null,
+        );
     }
 
     const apiResponse = await withTransaction(
@@ -129,7 +131,12 @@ postRouter.put('/comments', async (req, res) => {
     }
 
     if (content.length > 300) {
-        throw new ErrorResponse(400, 4000, `댓글은 300자 이하로 작성해주세요. 현재 길이 : ${content.length}`, null);
+        throw new ErrorResponse(
+            400,
+            4000,
+            `댓글은 300자 이하로 작성해주세요. 현재 길이 : ${content.length}`,
+            null,
+        );
     }
 
     const apiResponse = await withTransaction(
@@ -198,10 +205,10 @@ postRouter.delete('/likes', async (req, res) => {
 });
 
 // 게시글 추가
-postRouter.post('/', upload.single('postImage'), async (req, res) => {
+postRouter.post('/', multipartImageProcessor.single('postImage'), async (req, res) => {
     const title = req.body.title?.trim() || null;
     const content = req.body.content?.trim() || null;
-    const contentImage = req.file;
+    const contentImage = await validateAndReturnExactImageContent(req.file);
     const user = await withTransaction(
         async conn => await getLoggedInUser(conn, req.cookies.session_id),
     );
@@ -211,11 +218,21 @@ postRouter.post('/', upload.single('postImage'), async (req, res) => {
     }
 
     if (title.length > 26) {
-        throw new ErrorResponse(400, 4000, `제목은 26자 이하로 작성해주세요. 현재 길이 : ${title.length}`, null);
+        throw new ErrorResponse(
+            400,
+            4000,
+            `제목은 26자 이하로 작성해주세요. 현재 길이 : ${title.length}`,
+            null,
+        );
     }
 
     if (content.length > 1000) {
-        throw new ErrorResponse(400, 4000, `게시글은 1000자 이하로 작성해주세요. 현재 길이 : ${content.length}`, null);
+        throw new ErrorResponse(
+            400,
+            4000,
+            `게시글은 1000자 이하로 작성해주세요. 현재 길이 : ${content.length}`,
+            null,
+        );
     }
 
     const apiResponse = await withTransaction(
@@ -231,27 +248,44 @@ postRouter.post('/', upload.single('postImage'), async (req, res) => {
 });
 
 // 게시글 수정
-postRouter.put('/:postId', upload.single('postImage'), async (req, res) => {
+postRouter.put('/:postId', multipartImageProcessor.single('postImage'), async (req, res) => {
     const postId = parseInt(req.params.postId);
     const title = req.body.title?.trim() || null;
     const content = req.body.content?.trim() || null;
     const removeImageFlag = req.body.removeImageFlag;
     const isRemoveImage = removeImageFlag === 'true';
-    const contentImage = req.file;
+    const contentImage = await validateAndReturnExactImageContent(req.file);
     const user = await withTransaction(
         async conn => await getLoggedInUser(conn, req.cookies.session_id),
     );
 
-    if (!title || title.length < 1 || !content || content.length < 1 || isNaN(postId) || postId < 1) {
+    if (
+        !title ||
+        title.length < 1 ||
+        !content ||
+        content.length < 1 ||
+        isNaN(postId) ||
+        postId < 1
+    ) {
         throw new ErrorResponse(400, 4000, '유효하지 않은 요청입니다', null);
     }
 
     if (title.length > 26) {
-        throw new ErrorResponse(400, 4000, `제목은 26자 이하로 작성해주세요. 현재 길이 : ${title.length}`, null);
+        throw new ErrorResponse(
+            400,
+            4000,
+            `제목은 26자 이하로 작성해주세요. 현재 길이 : ${title.length}`,
+            null,
+        );
     }
 
     if (content.length > 1000) {
-        throw new ErrorResponse(400, 4000, `게시글은 1000자 이하로 작성해주세요. 현재 길이 : ${content.length}`, null);
+        throw new ErrorResponse(
+            400,
+            4000,
+            `게시글은 1000자 이하로 작성해주세요. 현재 길이 : ${content.length}`,
+            null,
+        );
     }
 
     const apiResponse = await withTransaction(

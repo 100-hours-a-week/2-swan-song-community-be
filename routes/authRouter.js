@@ -7,17 +7,16 @@ import { withTransaction } from '../utils/transactionManager.js';
 
 import { ErrorResponse } from '../dto/errorResponse.js';
 
-import multer from 'multer';
 import cookieParser from 'cookie-parser';
 
 import { authController } from '../controller/authController.js';
 
 import { getLoggedInUser, isLoggedIn } from '../utils/authUtils.js';
+import { multipartImageProcessor, validateAndReturnExactImageContent } from '../middleware/MultipartImageProcessor.js';
 
 const authRouter = express.Router();
-const upload = multer({
-    storage: multer.memoryStorage(),
-}); // 이미지 업로드를 위한 multer 설정
+
+
 
 // URL-encoded 데이터 파싱을 위한 미들웨어 추가
 authRouter.use(express.urlencoded({ extended: true }));
@@ -27,14 +26,13 @@ authRouter.use(express.json());
 authRouter.use(cookieParser());
 
 // 회원가입
-authRouter.post('/signup', upload.single('profileImage'), async (req, res) => {
-    const email = req.body.email?.trim() || null;
-    const password = req.body.password?.trim() || null;
-    const passwordChecker = req.body.passwordChecker?.trim() || null;
-    const nickname = req.body.nickname?.trim() || null;
+authRouter.post('/signup', multipartImageProcessor.single('profileImage'), async (req, res) => {
+    const email = req.body.email.trim();
+    const password = req.body.password.trim();
+    const passwordChecker = req.body.passwordChecker.trim();
+    const nickname = req.body.nickname.trim();
 
-
-    const profileImage = req.file;
+    const profileImage = await validateAndReturnExactImageContent(req.file);
 
     // 필수 입력값 확인
     if (!email || !password || !passwordChecker || !nickname) {
@@ -125,7 +123,7 @@ authRouter.get('/check-nickname', async (req, res) => {
 });
 
 // 로그인
-authRouter.post('/signin', upload.none(), async (req, res) => {
+authRouter.post('/signin', multipartImageProcessor.none(), async (req, res) => {
     const email = req.body.email?.trim() || null;
     const password = req.body.password?.trim() || null;
     const sessionIdToRemove = req.cookies.session_id; // 기존에 발급된 세션 ID

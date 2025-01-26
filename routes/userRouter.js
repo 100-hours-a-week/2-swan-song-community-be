@@ -7,17 +7,14 @@ import { withTransaction } from '../utils/transactionManager.js';
 
 import { ErrorResponse } from '../dto/errorResponse.js';
 
-import multer from 'multer';
 import cookieParser from 'cookie-parser';
 
 import { userController } from '../controller/userController.js';
 
 import { getLoggedInUser, isLoggedIn } from '../utils/authUtils.js';
+import { multipartImageProcessor, validateAndReturnExactImageContent } from '../middleware/MultipartImageProcessor.js';
 
 const userRouter = express.Router();
-const upload = multer({
-    storage: multer.memoryStorage(),
-}); // 이미지 업로드를 위한 multer 설정
 
 // URL-encoded 데이터 파싱을 위한 미들웨어 추가
 userRouter.use(express.urlencoded({ extended: true }));
@@ -53,10 +50,10 @@ userRouter.get('/me', async (req, res) => {
 });
 
 // 회원정보 수정
-userRouter.put('/me', upload.single('profileImage'), async (req, res) => {
+userRouter.put('/me', multipartImageProcessor.single('profileImage'), async (req, res) => {
     const nickname = req.body.nickname ? req.body.nickname.trim() : null;
     const isProfileImageRemoved = req.body.isProfileImageRemoved === 'true';
-    const profileImage = req.file;
+    const profileImage = await validateAndReturnExactImageContent(req.file);
     const sessionId = req.cookies.session_id;
     const user = await withTransaction(async conn => {
         return await getLoggedInUser(conn, sessionId);
@@ -89,7 +86,7 @@ userRouter.put('/me', upload.single('profileImage'), async (req, res) => {
     apiResponse.resolve(res);
 });
 
-userRouter.patch('/me/password', upload.none(), async (req, res) => {
+userRouter.patch('/me/password', async (req, res) => {
     const sessionId = req.cookies.session_id;
     const user = await withTransaction(async conn => {
         return await getLoggedInUser(conn, sessionId);

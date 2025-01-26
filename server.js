@@ -11,7 +11,6 @@ import dotenv from 'dotenv';
 
 import bodyParser from 'body-parser';
 
-import staticRouter from './routes/staticRouter.js';
 import authRouter from './routes/authRouter.js';
 import userRouter from './routes/userRouter.js';
 import postRouter from './routes/postRouter.js';
@@ -43,7 +42,6 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-app.use(staticRouter);
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/posts', postRouter);
@@ -57,14 +55,42 @@ app.use((err, req, res, next) => {
     logger.error(
         `${req.method} ${req.originalUrl} ${headers} ${query} ${body} - ${err?.errorResponse?.message} -${err?.message}`,
     );
-    res.status(err.httpStatus || 500).json(
-        err.errorResponse || {
-            code: 5000,
-            message: '서버 내 오류가 발생했습니다.',
+
+    // Multer 관련 에러 처리
+    if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(200).json({
+                code: 400,
+                message: '파일크기는 5MB 미만으로 해주세요.',
+                data: null,
+            });
+        }
+
+        return res.status(200).json({
+            code: 400,
+            message: '파일 업로드 중 이상이 발생했습니다.',
             data: null,
-        },
-    );
-    next();
+        });
+    }
+
+
+    if (err.message === "Input buffer contains unsupported image format") {
+        return res.status(200).json({
+            code: 400,
+            message: '허용되지 않은 파일 형식입니다.',
+            data: null,
+        });
+    }
+
+    // 일반 에러 처리
+    const status = err.httpStatus || 500;
+    const response = err.errorResponse || {
+        code: 5000,
+        message: '서버 내 오류가 발생했습니다.',
+        data: null,
+    };
+
+    return res.status(status).json(response);
 });
 
 app.listen(port, () => {
