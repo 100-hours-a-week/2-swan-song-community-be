@@ -61,6 +61,17 @@ class AuthController {
         return new ApiResponse(200, 2000, '사용 가능한 닉네임입니다', data);
     }
 
+    async checkEmailAvailability(conn, email) {
+        if (await userDao.findByEmail(conn, email)) {
+            throw new ErrorResponse(200, 4009, '이메일이 중복되었습니다', {
+                isAvailable: false,
+            });
+        }
+
+        const data = { isAvailable: true };
+        return new ApiResponse(200, 2000, '사용 가능한 이메일입니다', data);
+    }
+
     async login(conn, res, sessionIdToRemove, email, password) {
         // 해당 사용자가 존재하는지, 비밀번호가 일치하는지 확인
         const user = await userDao.findByEmail(conn, email);

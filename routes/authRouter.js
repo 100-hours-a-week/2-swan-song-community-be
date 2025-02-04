@@ -157,6 +157,25 @@ authRouter.get('/check-nickname', async (req, res) => {
     res.status(200).json(result);
 });
 
+// 닉네임 중복 여부 조회
+authRouter.get('/check-email', async (req, res) => {
+    const email = req.query.email?.trim() || '';
+
+    if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
+        throw new ErrorResponse(
+            400,
+            4000,
+            '이메일 형식이 올바르지 않습니다',
+            { isAvailable: false },
+        );
+    }
+
+    const result = await withTransaction(async conn => {
+        return await authController.checkEmailAvailability(conn, email);
+    });
+    res.status(200).json(result);
+});
+
 // 로그인
 authRouter.post('/signin', multipartImageProcessor.none(), async (req, res) => {
     const email = req.body.email?.trim() || null;
