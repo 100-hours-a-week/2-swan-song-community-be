@@ -119,10 +119,13 @@ userRouter.patch('/me/password', async (req, res) => {
         return await getLoggedInUser(conn, sessionId);
     });
 
-    const { newPassword, passwordCheck } = req.body;
+    const currentPassword = req.body.currentPassword ? req.body.currentPassword.trim() : '';
+    const newPassword = req.body.newPassword ? req.body.newPassword.trim() : '';
+    const passwordCheck = req.body.passwordCheck ? req.body.passwordCheck.trim() : '';
 
     // 비밀번호가 Base64 인코딩인지 확인
     if (
+        !/^[A-Za-z0-9+/=]+$/.test(currentPassword) ||
         !/^[A-Za-z0-9+/=]+$/.test(newPassword) ||
         !/^[A-Za-z0-9+/=]+$/.test(passwordCheck)
     ) {
@@ -165,6 +168,7 @@ userRouter.patch('/me/password', async (req, res) => {
 
     const apiResponse = await withTransaction(async conn => {
         return await userController.updateUserPassword(conn, user.id, {
+            currentPassword,
             newPassword,
             passwordCheck,
         });
