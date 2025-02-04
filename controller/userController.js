@@ -94,7 +94,8 @@ class UserController {
     }
 
     async updateUserPassword(conn, userId, updateUserPasswordDto) {
-        const { currentPassword, newPassword, passwordCheck } = updateUserPasswordDto;
+        const { currentPassword, newPassword, passwordCheck } =
+            updateUserPasswordDto;
 
         if (newPassword !== passwordCheck) {
             throw new ErrorResponse(
@@ -109,7 +110,11 @@ class UserController {
             .password;
 
         if (!(await bcrypt.compare(currentPassword, currentPasswordInDB))) {
-            throw new ErrorResponse(200, 4003, '현재 비밀번호가 일치하지 않습니다.');
+            throw new ErrorResponse(
+                200,
+                4003,
+                '현재 비밀번호가 일치하지 않습니다.',
+            );
         }
 
         const hashedPassword = await bcrypt.hash(newPassword, 10);

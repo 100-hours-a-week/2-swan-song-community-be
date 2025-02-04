@@ -162,12 +162,9 @@ authRouter.get('/check-email', async (req, res) => {
     const email = req.query.email?.trim() || '';
 
     if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
-        throw new ErrorResponse(
-            400,
-            4000,
-            '이메일 형식이 올바르지 않습니다',
-            { isAvailable: false },
-        );
+        throw new ErrorResponse(400, 4000, '이메일 형식이 올바르지 않습니다', {
+            isAvailable: false,
+        });
     }
 
     const result = await withTransaction(async conn => {
