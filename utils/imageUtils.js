@@ -20,7 +20,11 @@ const CDN_DOMAIN = process.env.CDN_DOMAIN;
 const s3Client = new S3Client();
 
 export const saveImage = async image => {
-    const s3Key = `${Date.now()}_${uuidv4()}.${image.mimetype.split('/')[1]}`;
+    let extension = image.mimetype.split('/')[1];
+    if (extension.includes('svg+xml')) {
+        extension = 'svg';
+    }
+    const s3Key = `${Date.now()}_${uuidv4()}.${extension}`;
 
     try {
         // 파일을 읽어서 S3로 업로드
