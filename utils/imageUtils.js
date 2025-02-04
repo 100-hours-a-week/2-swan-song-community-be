@@ -15,6 +15,7 @@ import { ErrorResponse } from '../dto/errorResponse.js';
 import { v4 as uuidv4 } from 'uuid';
 
 const BUCKET_NAME = process.env.BUCKET_NAME;
+const CDN_DOMAIN = process.env.CDN_DOMAIN;
 
 const s3Client = new S3Client();
 
@@ -48,13 +49,12 @@ export const saveImage = async image => {
     }
 };
 
-export const getPreSignedUrl = async s3Key => {
-    const command = new GetObjectCommand({
-        Bucket: BUCKET_NAME,
-        Key: s3Key,
-    });
+const getCdnImageUrl = s3Key => {
+    return `${CDN_DOMAIN}/${s3Key}`;
+}
 
-    return await getSignedUrl(s3Client, command, { expiresIn: 3600 }); // 1시간 유효
+export const getPreSignedUrl = async s3Key => {
+    return getCdnImageUrl(s3Key);
 };
 
 // 이미지 삭제
