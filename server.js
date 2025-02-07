@@ -20,6 +20,7 @@ import multer from 'multer';
 const app = express();
 dotenv.config();
 
+const domain = process.env.DOMAIN;
 const port = process.env.PORT;
 const env = process.env.NODE_ENV;
 
@@ -32,11 +33,8 @@ healthRouter.get('/health', (req, res) => {
 });
 app.use(healthRouter);
 
-// CORS 설정: 3000 포트에서만 허용
 const corsOptions = {
-    origin: (origin, callback) => {
-        callback(null, true);
-    },
+    origin: domain,  // 특정 도메인 허용
     allowedHeaders: ['Content-Type', 'Authorization', 'Set-Cookie'],
     credentials: true,
 };
