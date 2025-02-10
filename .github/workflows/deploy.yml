@@ -43,14 +43,15 @@ jobs:
               run: |
                   HOST=${{ secrets.EC2_HOST }}
                   USER=${{ secrets.EC2_USER }}
+                  TAG=${{ env.TAG }}  # ✅ GitHub Actions에서 환경 변수 가져오기
 
-                  ssh -o StrictHostKeyChecking=no -i key.pem $USER@$HOST << 'EOF'
+                  ssh -o StrictHostKeyChecking=no -i key.pem $USER@$HOST << EOF
                     set -e
 
                     echo "🔍 현재 실행 중인 컨테이너 확인"
-                    ACTIVE_CONTAINER=$(docker ps --format '{{.Names}}' | grep -E 'blue|green' || echo 'blue')
+                    ACTIVE_CONTAINER=\$(docker ps --format '{{.Names}}' | grep -E 'blue|green' || echo 'blue')
 
-                    if [ "$ACTIVE_CONTAINER" == "blue" ]; then
+                    if [ "\$ACTIVE_CONTAINER" == "blue" ]; then
                       NEW_VERSION="green"
                       OLD_VERSION="blue"
                     else
@@ -58,14 +59,45 @@ jobs:
                       OLD_VERSION="green"
                     fi
 
-                    echo "🚀 새로운 컨테이너 배포: $NEW_VERSION"
+                    echo "🚀 새로운 컨테이너 배포: \$NEW_VERSION"
+                    echo "✅ 사용되는 이미지 태그: $TAG"
 
-                    TAG=${{ env.TAG }}  # ✅ TAG 값을 명확히 설정
-
-                    echo "태그는 ? $TAG"
                     echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ secrets.REPOSITORY_OWNER }}" --password-stdin
-                    docker pull ghcr.io/${{ secrets.REPOSITORY_OWNER }}/community-server:$TAG  # ✅ TAG를 올바르게 사용
-    EOF
+                    docker pull ghcr.io/${{ secrets.REPOSITORY_OWNER }}/community-server:$TAG
 
-- name: Clean up SSH Key
-  run: rm -f key.pem
+                    echo "💾 환경 변수 파일 로드"
+                    aws ssm get-parameter --name ${{ secrets.PARAMETER_NAME }} --with-decryption --query 'Parameter.Value' --output text > env_file
+
+                    echo "📦 새로운 컨테이너 실행"
+                    docker-compose up -d --no-deps --force-recreate --remove-orphans --build \$NEW_VERSION
+                    rm -f env_file
+
+                    echo "⏳ 새로운 컨테이너 헬스체크 대기..."
+                    MAX_RETRIES=30
+                    RETRY_INTERVAL=3
+                    COUNT=0
+                    while ! docker inspect --format='{{.State.Health.Status}}' \$NEW_VERSION | grep -q 'healthy'; do
+                        if [ \$COUNT -ge \$MAX_RETRIES ]; then
+                            echo "❌ 새로운 컨테이너가 정상적으로 기동되지 않음! 롤백 진행..."
+                            docker-compose stop \$NEW_VERSION
+                            docker-compose rm -f \$NEW_VERSION
+                            exit 1
+                        fi
+                        echo "🔄 헬스체크 대기 중 (\$COUNT/\$MAX_RETRIES)..."
+                        sleep \$RETRY_INTERVAL
+                        COUNT=\$((COUNT + 1))
+                    done
+                    echo "✅ 새로운 컨테이너 정상 기동됨!"
+
+                    echo "📝 Nginx 설정 업데이트 (Blue-Green 전환)"
+                    sed -i "s/server \$OLD_VERSION:8181;/server \$NEW_VERSION:8181;/" /home/user/deployment/nginx.conf
+                    docker exec -it nginx-proxy nginx -s reload
+
+                    echo "🗑️ 기존 컨테이너 종료 및 정리"
+                    docker-compose stop \$OLD_VERSION && docker-compose rm -f \$OLD_VERSION
+
+                    echo "🎉 배포 완료!"
+                  EOF
+
+            - name: Clean up SSH Key
+              run: rm -f key.pem
