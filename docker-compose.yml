@@ -1,0 +1,54 @@
+version: '3.9'
+
+services:
+  nginx:
+    image: nginx
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - mynetwork
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt
+      - /var/www/html:/var/www/html
+    deploy:
+      restart_policy:
+        condition: any
+
+  blue:
+    image: ghcr.io/unagi-zoso/community-server:latest  # ✅ 최신 이미지 적용
+    container_name: blue
+    networks:
+      - mynetwork
+    volumes:
+      - ./env_file:/app/env_file  # ✅ 컨테이너 내부로 파일 전달
+    env_file:
+      - ./env_file  # ✅ 파일 내부의 키 값을 환경 변수로 설정
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 5s
+      retries: 5
+      start_period: 10s
+      timeout: 5s
+
+  green:
+    image: ghcr.io/unagi-zoso/community-server:latest  # ✅ 최신 이미지 적용
+    container_name: green
+    networks:
+      - mynetwork
+    volumes:
+      - ./env_file:/app/env_file  # ✅ 컨테이너 내부로 파일 전달
+    env_file:
+      - ./env_file  # ✅ 파일 내부의 키 값을 환경 변수로 설정
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 5s
+      retries: 5
+      start_period: 10s
+      timeout: 5s
+
+networks:
+  mynetwork:
+    driver: bridge
