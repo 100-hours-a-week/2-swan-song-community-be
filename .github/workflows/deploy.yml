@@ -56,6 +56,7 @@ jobs:
                       OLD_VERSION="green"
                     fi
                   
+                    echo "태그는 ? $TAG"
                     echo "🚀 새로운 컨테이너 배포: $NEW_VERSION"
                   
                     echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ secrets.REPOSITORY_OWNER }}" --password-stdin
