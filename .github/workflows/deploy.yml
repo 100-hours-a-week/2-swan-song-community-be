@@ -7,26 +7,106 @@ jobs:
     build-and-push:
         runs-on: ubuntu-latest
         outputs:
-            TAG: ${{ steps.set-tag.outputs.TAG }}
+            TAG: ${{ steps.set-tag.outputs.TAG }}  # ✅ TAG 값을 output으로 저장
         steps:
             - name: Checkout Repository
               uses: actions/checkout@v3
 
             - name: Set Image Tag
               id: set-tag
-              run: |
-                  TAG=$(echo ${GITHUB_SHA:-latest} | cut -c1-7)
-                  echo "TAG=$TAG" >> $GITHUB_OUTPUT  # GITHUB_OUTPUT에 저장
-                  echo "Set TAG=$TAG"
+              run: echo "TAG=$(echo ${GITHUB_SHA:-latest} | cut -c1-7)" >> $GITHUB_OUTPUT  # ✅ GITHUB_OUTPUT을 사용하여 outputs에 저장
 
             - name: Debug TAG in build-and-push
-              run: echo "TAG=${{ steps.set-tag.outputs.TAG }}"
+              run: echo "TAG=${{ steps.set-tag.outputs.TAG }}"  # ✅ TAG 값 확인
+
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v2
+
+            - name: Login to GitHub Container Registry
+              run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ secrets.REPOSITORY_OWNER }}" --password-stdin
+
+            - name: Build and push Docker image
+              run: |
+                  docker buildx build \
+                    --platform linux/amd64 \
+                    --push \
+                    -t ghcr.io/${{ secrets.REPOSITORY_OWNER }}/community-server:${{ steps.set-tag.outputs.TAG }} \
+                    -t ghcr.io/${{ secrets.REPOSITORY_OWNER }}/community-server:latest .
 
     deploy:
         needs: [build-and-push]
         runs-on: ubuntu-latest
         env:
-            TAG: ${{ needs.build-and-push.outputs.TAG }}
+            TAG: ${{ needs.build-and-push.outputs.TAG }}  # ✅ build-and-push의 TAG 값 가져오기
         steps:
             - name: Debug TAG in deploy
-              run: echo "TAG=${{ env.TAG }}"
+              run: echo "TAG=${{ env.TAG }}"  # ✅ deploy 단계에서 TAG가 정상적으로 오는지 확인
+
+            - name: Prepare SSH Key
+              run: |
+                  echo "${{ secrets.EC2_SSH_KEY }}" | base64 --decode > key.pem
+                  chmod 600 key.pem
+
+            - name: SSH into EC2 and Deploy
+              run: |
+                  HOST=${{ secrets.EC2_HOST }}
+                  USER=${{ secrets.EC2_USER }}
+                  TAG=${{ env.TAG }}
+                  
+                  echo "🎯 현재 배포할 태그: $TAG"
+                  ssh -o StrictHostKeyChecking=no -i key.pem $USER@$HOST "TAG=$TAG bash -s" << 'EOF'
+                    set -e
+                  
+                    echo "🔍 현재 실행 중인 컨테이너 확인"
+                    ACTIVE_CONTAINER=\$(docker ps --format '{{.Names}}' | grep -E 'blue|green' || echo 'blue')
+                  
+                    if [ "\$ACTIVE_CONTAINER" == "blue" ]; then
+                      NEW_VERSION="green"
+                      OLD_VERSION="blue"
+                    else
+                      NEW_VERSION="blue"
+                      OLD_VERSION="green"
+                    fi
+                  
+                    echo "🚀 새로운 컨테이너 배포: \$NEW_VERSION"
+                    echo "✅ 사용되는 이미지 태그: \$TAG"
+                  
+                    echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ secrets.REPOSITORY_OWNER }}" --password-stdin
+                    docker pull ghcr.io/${{ secrets.REPOSITORY_OWNER }}/community-server:\$TAG
+                  
+                    echo "💾 환경 변수 파일 로드"
+                    aws ssm get-parameter --name ${{ secrets.PARAMETER_NAME }} --with-decryption --query 'Parameter.Value' --output text > env_file
+                  
+                    echo "📦 새로운 컨테이너 실행"
+                    docker-compose up -d --no-deps --force-recreate --remove-orphans --build \$NEW_VERSION
+                    rm -f env_file
+                  
+                    echo "⏳ 새로운 컨테이너 헬스체크 대기..."
+                    MAX_RETRIES=30
+                    RETRY_INTERVAL=3
+                    COUNT=0
+                    while ! docker inspect --format='{{.State.Health.Status}}' \$NEW_VERSION | grep -q 'healthy'; do
+                        if [ \$COUNT -ge \$MAX_RETRIES ]; then
+                            echo "❌ 새로운 컨테이너가 정상적으로 기동되지 않음! 롤백 진행..."
+                            docker-compose stop \$NEW_VERSION
+                            docker-compose rm -f \$NEW_VERSION
+                            exit 1
+                        fi
+                        echo "🔄 헬스체크 대기 중 (\$COUNT/\$MAX_RETRIES)..."
+                        sleep \$RETRY_INTERVAL
+                        COUNT=\$((COUNT + 1))
+                    done
+                    echo "✅ 새로운 컨테이너 정상 기동됨!"
+                  
+                    echo "📝 Nginx 설정 업데이트 (Blue-Green 전환)"
+                    sed -i "s/server \$OLD_VERSION:8181;/server \$NEW_VERSION:8181;/" /home/user/deployment/nginx.conf
+                    docker exec -it nginx-proxy nginx -s reload
+                  
+                    echo "🗑️ 기존 컨테이너 종료 및 정리"
+                    docker-compose stop \$OLD_VERSION && docker-compose rm -f \$OLD_VERSION
+                  
+                    echo "🎉 배포 완료!"
+                  EOF
+
+            - name: Clean up SSH Key
+              run: rm -f key.pem
