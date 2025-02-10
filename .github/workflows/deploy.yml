@@ -2,8 +2,6 @@ name: CI/CD
 
 on:
     push:
-        branches:
-            - main
 
 jobs:
     build-and-push:
@@ -31,7 +29,7 @@ jobs:
                     -t ghcr.io/${{ secrets.REPOSITORY_OWNER }}/community-server:latest .
 
     deploy:
-        needs: [build-and-push]
+        needs: [ build-and-push ]
         runs-on: ubuntu-latest
         steps:
             - name: Prepare SSH Key
@@ -39,7 +37,7 @@ jobs:
                   echo "${{ secrets.EC2_SSH_KEY }}" | base64 --decode > key.pem
                   chmod 600 key.pem
 
-            - name: SSH into EC2 and pull/run container
+            - name: SSH into EC2 and Perform Blue-Green Deployment
               run: |
                   HOST=${{ secrets.EC2_HOST }}
                   USER=${{ secrets.EC2_USER }}
@@ -47,12 +45,51 @@ jobs:
 
                   ssh -o StrictHostKeyChecking=no -i key.pem $USER@$HOST "
                     set -e
-                    docker rm -f community-server || true
+
+                    echo 'Determining active version (Blue or Green)...'
+                    ACTIVE_CONTAINER=\$(docker ps --format '{{.Names}}' | grep -E 'blue|green' || echo 'blue')
+
+                    if [ \"\$ACTIVE_CONTAINER\" == \"blue\" ]; then
+                      NEW_VERSION=\"green\"
+                      OLD_VERSION=\"blue\"
+                    else
+                      NEW_VERSION=\"blue\"
+                      OLD_VERSION=\"green\"
+                    fi
+
+                    echo 'Deploying new version (\$NEW_VERSION)...'
+
                     docker login ghcr.io -u ${{ secrets.REPOSITORY_OWNER }} -p ${{ secrets.GHCR_PAT }}
                     docker pull ghcr.io/${{ secrets.REPOSITORY_OWNER }}/community-server:${TAG}
+
                     aws ssm get-parameter --name ${{ secrets.PARAMETER_NAME}} --with-decryption --query 'Parameter.Value' --output text > env_file
-                    docker run -d --name community-server --env-file env_file -p 8181:8181 ghcr.io/${{ secrets.REPOSITORY_OWNER }}/community-server:${TAG}
+
+                    echo 'Starting new containers for \$NEW_VERSION...'
+                    docker-compose up -d --no-deps --force-recreate --remove-orphans --build \$NEW_VERSION
                     rm -f env_file
+
+                    echo 'Waiting for new containers to be healthy...'
+                    MAX_RETRIES=30
+                    RETRY_INTERVAL=3
+                    COUNT=0
+                    while ! docker inspect --format='{{.State.Health.Status}}' \$NEW_VERSION | grep -q 'healthy'; do
+                        if [ \$COUNT -ge \$MAX_RETRIES ]; then
+                            echo \"Error: New containers did not become healthy in time!\"
+                            exit 1
+                        fi
+                        echo \"Waiting for \$NEW_VERSION containers to be healthy...\"
+                        sleep \$RETRY_INTERVAL
+                        COUNT=\$((COUNT + 1))
+                    done
+
+                    echo 'Updating Nginx to point to \$NEW_VERSION...'
+                    sed -i 's/server \$OLD_VERSION:80;/server \$NEW_VERSION:80;/' /home/user/deployment/nginx.conf
+                    docker exec -it nginx-proxy nginx -s reload
+
+                    echo 'Removing old version (\$OLD_VERSION)...'
+                    docker-compose stop \$OLD_VERSION && docker-compose rm -f \$OLD_VERSION
+
+                    echo 'Deployment successful!'
                   "
 
             - name: Clean up SSH Key

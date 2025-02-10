@@ -1,0 +1,55 @@
+version: '3.9'
+
+services:
+  nginx:
+    image: nginx
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - mynetwork
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt  # SSL 인증서 저장 위치
+      - /var/lib/letsencrypt:/var/lib/letsencrypt
+      - /var/log/nginx:/var/log/nginx
+    deploy:
+      restart_policy:
+        condition: any
+
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt
+      - /var/lib/letsencrypt:/var/lib/letsencrypt
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done'"
+
+  blue:
+    image: ghcr.io/${REPOSITORY_OWNER}/community-server:${TAG}
+    container_name: blue
+    networks:
+      - mynetwork
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 5s
+      retries: 5
+      start_period: 10s
+      timeout: 5s
+
+  green:
+    image: ghcr.io/${REPOSITORY_OWNER}/community-server:${TAG}
+    container_name: green
+    networks:
+      - mynetwork
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 5s
+      retries: 5
+      start_period: 10s
+      timeout: 5s
+
+networks:
+  mynetwork:
+    driver: bridge
