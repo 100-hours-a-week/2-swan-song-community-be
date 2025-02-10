@@ -6,19 +6,25 @@ on:
 jobs:
     build-and-push:
         runs-on: ubuntu-latest
+        outputs:
+            TAG: ${{ steps.set-tag.outputs.TAG }}  # ✅ TAG 값을 output으로 저장
         steps:
             - name: Checkout Repository
               uses: actions/checkout@v3
 
             - name: Set Image Tag
-              run: echo "TAG=$(echo ${GITHUB_SHA:-latest} | cut -c1-7)" >> $GITHUB_ENV \
-                   echo "TAG=${TAG}"
+              id: set-tag
+              run: echo "TAG=$(echo ${GITHUB_SHA:-latest} | cut -c1-7)" >> $GITHUB_ENV
 
-            - name: Set up Docker Buildx
-              uses: docker/setup-buildx-action@v2
+            - name: Save TAG as output
+              id: output-tag
+              run: echo "TAG=${{ env.TAG }}" >> $GITHUB_OUTPUT
 
             - name: Debug Environment Variables
               run: echo "TAG=${{ env.TAG }}"  # ✅ TAG 값 확인
+
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v2
 
             - name: Login to GitHub Container Registry
               run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ secrets.REPOSITORY_OWNER }}" --password-stdin
@@ -34,6 +40,8 @@ jobs:
     deploy:
         needs: [build-and-push]
         runs-on: ubuntu-latest
+        env:
+            TAG: ${{ needs.build-and-push.outputs.TAG }}  # ✅ build-and-push의 TAG 값 가져오기
         steps:
             - name: Prepare SSH Key
               run: |
@@ -44,14 +52,14 @@ jobs:
               run: |
                   HOST=${{ secrets.EC2_HOST }}
                   USER=${{ secrets.EC2_USER }}
-                  TAG=${{ env.TAG }}  # ✅ GitHub Actions에서 환경 변수 가져오기
-
+                  TAG=${{ env.TAG }}
+                  
                   ssh -o StrictHostKeyChecking=no -i key.pem $USER@$HOST << EOF
                     set -e
-
+                  
                     echo "🔍 현재 실행 중인 컨테이너 확인"
                     ACTIVE_CONTAINER=\$(docker ps --format '{{.Names}}' | grep -E 'blue|green' || echo 'blue')
-
+                  
                     if [ "\$ACTIVE_CONTAINER" == "blue" ]; then
                       NEW_VERSION="green"
                       OLD_VERSION="blue"
@@ -59,20 +67,20 @@ jobs:
                       NEW_VERSION="blue"
                       OLD_VERSION="green"
                     fi
-
+                  
                     echo "🚀 새로운 컨테이너 배포: \$NEW_VERSION"
-                    echo "✅ 사용되는 이미지 태그: $TAG"
-
+                    echo "✅ 사용되는 이미지 태그: \$TAG"
+                  
                     echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ secrets.REPOSITORY_OWNER }}" --password-stdin
-                    docker pull ghcr.io/${{ secrets.REPOSITORY_OWNER }}/community-server:$TAG
-
+                    docker pull ghcr.io/${{ secrets.REPOSITORY_OWNER }}/community-server:\$TAG
+                  
                     echo "💾 환경 변수 파일 로드"
                     aws ssm get-parameter --name ${{ secrets.PARAMETER_NAME }} --with-decryption --query 'Parameter.Value' --output text > env_file
-
+                  
                     echo "📦 새로운 컨테이너 실행"
                     docker-compose up -d --no-deps --force-recreate --remove-orphans --build \$NEW_VERSION
                     rm -f env_file
-
+                  
                     echo "⏳ 새로운 컨테이너 헬스체크 대기..."
                     MAX_RETRIES=30
                     RETRY_INTERVAL=3
@@ -89,14 +97,14 @@ jobs:
                         COUNT=\$((COUNT + 1))
                     done
                     echo "✅ 새로운 컨테이너 정상 기동됨!"
-
+                  
                     echo "📝 Nginx 설정 업데이트 (Blue-Green 전환)"
                     sed -i "s/server \$OLD_VERSION:8181;/server \$NEW_VERSION:8181;/" /home/user/deployment/nginx.conf
                     docker exec -it nginx-proxy nginx -s reload
-
+                  
                     echo "🗑️ 기존 컨테이너 종료 및 정리"
                     docker-compose stop \$OLD_VERSION && docker-compose rm -f \$OLD_VERSION
-
+                  
                     echo "🎉 배포 완료!"
                   EOF
 
