@@ -14,14 +14,10 @@ jobs:
 
             - name: Set Image Tag
               id: set-tag
-              run: echo "TAG=$(echo ${GITHUB_SHA:-latest} | cut -c1-7)" >> $GITHUB_ENV
+              run: echo "TAG=$(echo ${GITHUB_SHA:-latest} | cut -c1-7)" >> $GITHUB_OUTPUT  # ✅ GITHUB_OUTPUT을 사용하여 outputs에 저장
 
-            - name: Save TAG as output
-              id: output-tag
-              run: echo "TAG=${{ env.TAG }}" >> $GITHUB_OUTPUT
-
-            - name: Debug Environment Variables
-              run: echo "TAG=${{ env.TAG }}"  # ✅ TAG 값 확인
+            - name: Debug TAG in build-and-push
+              run: echo "TAG=${{ steps.set-tag.outputs.TAG }}"  # ✅ TAG 값 확인
 
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v2
@@ -34,7 +30,7 @@ jobs:
                   docker buildx build \
                     --platform linux/amd64 \
                     --push \
-                    -t ghcr.io/${{ secrets.REPOSITORY_OWNER }}/community-server:${{ env.TAG }} \
+                    -t ghcr.io/${{ secrets.REPOSITORY_OWNER }}/community-server:${{ steps.set-tag.outputs.TAG }} \
                     -t ghcr.io/${{ secrets.REPOSITORY_OWNER }}/community-server:latest .
 
     deploy:
@@ -43,6 +39,9 @@ jobs:
         env:
             TAG: ${{ needs.build-and-push.outputs.TAG }}  # ✅ build-and-push의 TAG 값 가져오기
         steps:
+            - name: Debug TAG in deploy
+              run: echo "TAG=${{ env.TAG }}"  # ✅ deploy 단계에서 TAG가 정상적으로 오는지 확인
+
             - name: Prepare SSH Key
               run: |
                   echo "${{ secrets.EC2_SSH_KEY }}" | base64 --decode > key.pem
@@ -54,6 +53,7 @@ jobs:
                   USER=${{ secrets.EC2_USER }}
                   TAG=${{ env.TAG }}
                   
+                  echo "🎯 현재 배포할 태그: $TAG"
                   ssh -o StrictHostKeyChecking=no -i key.pem $USER@$HOST << EOF
                     set -e
                   
