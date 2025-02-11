@@ -27,7 +27,7 @@ services:
     env_file:
       - ./env_file  # ✅ 파일 내부의 키 값을 환경 변수로 설정
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8181/health"]
       interval: 5s
       retries: 5
       start_period: 10s
@@ -43,7 +43,7 @@ services:
     env_file:
       - ./env_file  # ✅ 파일 내부의 키 값을 환경 변수로 설정
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8181/health"]
       interval: 5s
       retries: 5
       start_period: 10s
