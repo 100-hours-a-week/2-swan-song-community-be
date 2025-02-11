@@ -99,7 +99,7 @@ jobs:
                     echo "✅ 새로운 컨테이너 정상 기동됨!"
                   
                     echo "📝 Nginx 설정 업데이트 (Blue-Green 전환)"
-                    sed -i "s/server \$OLD_VERSION:8181;/server \$NEW_VERSION:8181;/" /home/user/deployment/nginx.conf
+                    sed -i "s/server \$OLD_VERSION:8181;/server \$NEW_VERSION:8181;/" /home/$USER/nginx.conf
                     docker exec -it nginx-proxy nginx -s reload
                   
                     echo "🗑️ 기존 컨테이너 종료 및 정리"
