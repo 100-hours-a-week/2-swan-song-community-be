@@ -58,9 +58,9 @@ jobs:
                     set -e
                   
                     echo "🔍 현재 실행 중인 컨테이너 확인"
-                    ACTIVE_CONTAINER=$(docker ps --format '{{.Names}}' | grep -E 'blue-[12]|green-[12]' | head -n 1 || echo 'blue-1')
+                    ACTIVE_CONTAINER=\$(docker ps --format '{{.Names}}' | grep -E 'blue-[12]|green-[12]' | head -n 1 || echo 'blue-1')
                     
-                    if [[ "$ACTIVE_CONTAINER" == "blue-1" || "$ACTIVE_CONTAINER" == "blue-2" ]]; then
+                    if [[ "\$ACTIVE_CONTAINER" == "blue-1" || "\$ACTIVE_CONTAINER" == "blue-2" ]]; then
                         NEW_VERSION="green"
                         OLD_VERSION="blue"
                     else
@@ -68,13 +68,13 @@ jobs:
                         OLD_VERSION="green"
                     fi
                 
-                    echo "🔍 현재 실행 중인 컨테이너: $ACTIVE_CONTAINER"
-                    echo "🔄 다음 배포할 컨테이너 그룹: $NEW_VERSION"
+                    echo "🔍 현재 실행 중인 컨테이너: \$ACTIVE_CONTAINER"
+                    echo "🔄 다음 배포할 컨테이너 그룹: \$NEW_VERSION"
                     
-                    echo "🚀 새로운 컨테이너 배포: $NEW_VERSION"
-                    echo "✅ 사용되는 이미지 태그: $TAG"
+                    echo "🚀 새로운 컨테이너 배포: \$NEW_VERSION"
+                    echo "✅ 사용되는 이미지 태그: \$TAG"
                     
-                    docker pull ghcr.io/${{ secrets.REPOSITORY_OWNER }}/community-server:$TAG
+                    docker pull ghcr.io/${{ secrets.REPOSITORY_OWNER }}/community-server:\$TAG
                   
                     echo "💾 환경 변수 파일 로드"
                     aws ssm get-parameter --name ${{ secrets.PARAMETER_NAME }} --with-decryption --query 'Parameter.Value' --output text > env_file
