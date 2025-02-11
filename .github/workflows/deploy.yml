@@ -58,8 +58,8 @@ jobs:
                     set -e
                   
                     echo "🔍 현재 실행 중인 컨테이너 확인"
-                    echo "xx $(docker ps --format '{{.Names}}')"                  
-                    ACTIVE_CONTAINER=$(docker ps --format '{{.Names}}' | grep -E 'blue|green' | head -n 1 || echo 'blue')
+                    echo "xx \$(docker ps --format '{{.Names}}')"                  
+                    ACTIVE_CONTAINER=\$(docker ps --format '{{.Names}}' | grep -E 'blue|green' | head -n 1 || echo 'blue')
                     echo "🚦 현재 활성화된 컨테이너: \$ACTIVE_CONTAINER"
                   
                     if [ "\$ACTIVE_CONTAINER" == "blue" ]; then
