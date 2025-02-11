@@ -80,37 +80,37 @@ jobs:
                     aws ssm get-parameter --name ${{ secrets.PARAMETER_NAME }} --with-decryption --query 'Parameter.Value' --output text > env_file
                   
                     echo "📦 새로운 컨테이너 실행"
-                    docker-compose pull ${NEW_VERSION}-1 ${NEW_VERSION}-2
-                    docker-compose up -d --no-deps --force-recreate --remove-orphans --build ${NEW_VERSION}-1 ${NEW_VERSION}-2
+                    docker-compose pull \${NEW_VERSION}-1 \${NEW_VERSION}-2
+                    docker-compose up -d --no-deps --force-recreate --remove-orphans --build \${NEW_VERSION}-1 \${NEW_VERSION}-2
                     
                     echo "⏳ 새로운 컨테이너 헬스체크 대기..."
                     MAX_RETRIES=30
                     RETRY_INTERVAL=3
                     COUNT=0
-                    while ! docker inspect --format='{{.State.Health.Status}}' ${NEW_VERSION}-1 | grep -q 'healthy' || \
-                        ! docker inspect --format='{{.State.Health.Status}}' ${NEW_VERSION}-2 | grep -q 'healthy'; do
-                        if [ $COUNT -ge $MAX_RETRIES ]; then
+                    while ! docker inspect --format='{{.State.Health.Status}}' \${NEW_VERSION}-1 | grep -q 'healthy' || \
+                        ! docker inspect --format='{{.State.Health.Status}}' \${NEW_VERSION}-2 | grep -q 'healthy'; do
+                        if [ \$COUNT -ge \$MAX_RETRIES ]; then
                             echo "❌ 새로운 컨테이너가 정상적으로 기동되지 않음! 롤백 진행..."
-                            docker-compose stop ${NEW_VERSION}-1 ${NEW_VERSION}-2
-                            docker-compose rm -f ${NEW_VERSION}-1 ${NEW_VERSION}-2
+                            docker-compose stop \${NEW_VERSION}-1 \${NEW_VERSION}-2
+                            docker-compose rm -f \${NEW_VERSION}-1 \${NEW_VERSION}-2
                             exit 1
                         fi
-                        echo "🔄 헬스체크 대기 중 ($COUNT/$MAX_RETRIES)..."
-                        sleep $RETRY_INTERVAL
-                        COUNT=$((COUNT + 1))
+                        echo "🔄 헬스체크 대기 중 (\$COUNT/\$MAX_RETRIES)..."
+                        sleep \$RETRY_INTERVAL
+                        COUNT=\$((COUNT + 1))
                     done
                     echo "✅ 새로운 컨테이너 정상 기동됨!"
                     
                     echo "📝 Nginx 설정 업데이트 (Blue-Green 전환)"
-                    sed -i "s|server ${OLD_VERSION}-1:8181;|server ${NEW_VERSION}-1:8181;|" ./nginx/nginx.conf
-                    sed -i "s|server ${OLD_VERSION}-2:8181;|server ${NEW_VERSION}-2:8181;|" ./nginx/nginx.conf
+                    sed -i "s|server \${OLD_VERSION}-1:8181;|server \${NEW_VERSION}-1:8181;|" ./nginx/nginx.conf
+                    sed -i "s|server \${OLD_VERSION}-2:8181;|server \${NEW_VERSION}-2:8181;|" ./nginx/nginx.conf
                     
                     echo "🔄 Nginx 설정 반영 (헬스체크 성공 후 Reload)"
                     docker exec nginx-proxy nginx -s reload
                     
                     echo "🗑️ 기존 컨테이너 종료 및 정리"
-                    docker-compose stop ${OLD_VERSION}-1 ${OLD_VERSION}-2
-                    docker-compose rm -f ${OLD_VERSION}-1 ${OLD_VERSION}-2
+                    docker-compose stop \${OLD_VERSION}-1 \${OLD_VERSION}-2
+                    docker-compose rm -f \${OLD_VERSION}-1 \${OLD_VERSION}-2
                     rm -f env_file
                   
                     echo "🎉 배포 완료!"
