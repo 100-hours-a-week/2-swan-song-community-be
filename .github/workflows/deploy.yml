@@ -58,53 +58,56 @@ jobs:
                     set -e
                   
                     echo "🔍 현재 실행 중인 컨테이너 확인"
-                    echo "xx \$(docker ps --format '{{.Names}}')"                  
-                    ACTIVE_CONTAINER=\$(docker ps --format '{{.Names}}' | grep -E 'blue|green' | head -n 1 || echo 'blue')
-                    echo "🚦 현재 활성화된 컨테이너: \$ACTIVE_CONTAINER"
-                  
-                    if [ "\$ACTIVE_CONTAINER" == "blue" ]; then
-                      NEW_VERSION="green"
-                      OLD_VERSION="blue"
+                    ACTIVE_CONTAINER=$(docker ps --format '{{.Names}}' | grep -E 'blue-[12]|green-[12]' | head -n 1 || echo 'blue-1')
+                    
+                    if [[ "$ACTIVE_CONTAINER" == "blue-1" || "$ACTIVE_CONTAINER" == "blue-2" ]]; then
+                    NEW_VERSION="green"
+                    OLD_VERSION="blue"
                     else
-                      NEW_VERSION="blue"
-                      OLD_VERSION="green"
+                    NEW_VERSION="blue"
+                    OLD_VERSION="green"
                     fi
-                  
-                    echo "🚀 새로운 컨테이너 배포: \$NEW_VERSION"
-                    echo "✅ 사용되는 이미지 태그: \$TAG"
-                  
-                    echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ secrets.REPOSITORY_OWNER }}" --password-stdin
-                    docker pull ghcr.io/${{ secrets.REPOSITORY_OWNER }}/community-server:\$TAG
-                  
-                    echo "💾 환경 변수 파일 로드"
-                    aws ssm get-parameter --name ${{ secrets.PARAMETER_NAME }} --with-decryption --query 'Parameter.Value' --output text > env_file
-                  
+                
+                    echo "🔍 현재 실행 중인 컨테이너: $ACTIVE_CONTAINER"
+                    echo "🔄 다음 배포할 컨테이너 그룹: $NEW_VERSION"
+                    
+                    echo "🚀 새로운 컨테이너 배포: $NEW_VERSION"
+                    echo "✅ 사용되는 이미지 태그: $TAG"
+                    
+                    docker pull ghcr.io/${{ secrets.REPOSITORY_OWNER }}/community-server:$TAG
+                    
                     echo "📦 새로운 컨테이너 실행"
-                    docker-compose pull blue && docker-compose up -d --no-deps --force-recreate --remove-orphans --build \$NEW_VERSION
-                  
+                    docker-compose pull ${NEW_VERSION}-1 ${NEW_VERSION}-2
+                    docker-compose up -d --no-deps --force-recreate --remove-orphans --build ${NEW_VERSION}-1 ${NEW_VERSION}-2
+                    
                     echo "⏳ 새로운 컨테이너 헬스체크 대기..."
                     MAX_RETRIES=30
                     RETRY_INTERVAL=3
                     COUNT=0
-                    while ! docker inspect --format='{{.State.Health.Status}}' \$NEW_VERSION | grep -q 'healthy'; do
-                        if [ \$COUNT -ge \$MAX_RETRIES ]; then
+                    while ! docker inspect --format='{{.State.Health.Status}}' ${NEW_VERSION}-1 | grep -q 'healthy' || \
+                        ! docker inspect --format='{{.State.Health.Status}}' ${NEW_VERSION}-2 | grep -q 'healthy'; do
+                        if [ $COUNT -ge $MAX_RETRIES ]; then
                             echo "❌ 새로운 컨테이너가 정상적으로 기동되지 않음! 롤백 진행..."
-                            docker-compose stop \$NEW_VERSION
-                            docker-compose rm -f \$NEW_VERSION
+                            docker-compose stop ${NEW_VERSION}-1 ${NEW_VERSION}-2
+                            docker-compose rm -f ${NEW_VERSION}-1 ${NEW_VERSION}-2
                             exit 1
                         fi
-                        echo "🔄 헬스체크 대기 중 (\$COUNT/\$MAX_RETRIES)..."
-                        sleep \$RETRY_INTERVAL
-                        COUNT=\$((COUNT + 1))
+                        echo "🔄 헬스체크 대기 중 ($COUNT/$MAX_RETRIES)..."
+                        sleep $RETRY_INTERVAL
+                        COUNT=$((COUNT + 1))
                     done
                     echo "✅ 새로운 컨테이너 정상 기동됨!"
-                  
+                    
                     echo "📝 Nginx 설정 업데이트 (Blue-Green 전환)"
-                    sed -i "s|server \$OLD_VERSION:8181;|server \$NEW_VERSION:8181;|" /home/\$USER/nginx/nginx.conf
+                    sed -i "s|server ${OLD_VERSION}-1:8181;|server ${NEW_VERSION}-1:8181;|" ./nginx/nginx.conf
+                    sed -i "s|server ${OLD_VERSION}-2:8181;|server ${NEW_VERSION}-2:8181;|" ./nginx/nginx.conf
+                    
+                    echo "🔄 Nginx 설정 반영 (헬스체크 성공 후 Reload)"
                     docker exec nginx-proxy nginx -s reload
-                  
+                    
                     echo "🗑️ 기존 컨테이너 종료 및 정리"
-                    docker-compose stop \$OLD_VERSION && docker-compose rm -f \$OLD_VERSION
+                    docker-compose stop ${OLD_VERSION}-1 ${OLD_VERSION}-2
+                    docker-compose rm -f ${OLD_VERSION}-1 ${OLD_VERSION}-2
                     rm -f env_file
                   
                     echo "🎉 배포 완료!"
