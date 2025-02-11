@@ -13,7 +13,8 @@ COPY --from=builder /app/node_modules ./node_modules
 ENV TZ=Asia/Seoul
 RUN apk add --no-cache tzdata && \
     ln -sf /usr/share/zoneinfo/Asia/Seoul /etc/localtime && \
-    echo "Asia/Seoul" > /etc/timezone
+    echo "Asia/Seoul" > /etc/timezone && \
+    apk add --no-cache curl
 
 ENV PORT=8181
 EXPOSE $PORT
