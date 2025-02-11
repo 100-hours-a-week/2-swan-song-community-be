@@ -78,7 +78,7 @@ jobs:
                     aws ssm get-parameter --name ${{ secrets.PARAMETER_NAME }} --with-decryption --query 'Parameter.Value' --output text > env_file
                   
                     echo "📦 새로운 컨테이너 실행"
-                    docker-compose up -d --no-deps --force-recreate --remove-orphans --build \$NEW_VERSION
+                    docker-compose pull blue && docker-compose up -d --no-deps --force-recreate --remove-orphans --build \$NEW_VERSION
                     rm -f env_file
                   
                     echo "⏳ 새로운 컨테이너 헬스체크 대기..."
