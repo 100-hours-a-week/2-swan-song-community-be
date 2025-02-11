@@ -61,11 +61,11 @@ jobs:
                     ACTIVE_CONTAINER=$(docker ps --format '{{.Names}}' | grep -E 'blue-[12]|green-[12]' | head -n 1 || echo 'blue-1')
                     
                     if [[ "$ACTIVE_CONTAINER" == "blue-1" || "$ACTIVE_CONTAINER" == "blue-2" ]]; then
-                    NEW_VERSION="green"
-                    OLD_VERSION="blue"
+                        NEW_VERSION="green"
+                        OLD_VERSION="blue"
                     else
-                    NEW_VERSION="blue"
-                    OLD_VERSION="green"
+                        NEW_VERSION="blue"
+                        OLD_VERSION="green"
                     fi
                 
                     echo "🔍 현재 실행 중인 컨테이너: $ACTIVE_CONTAINER"
@@ -75,7 +75,10 @@ jobs:
                     echo "✅ 사용되는 이미지 태그: $TAG"
                     
                     docker pull ghcr.io/${{ secrets.REPOSITORY_OWNER }}/community-server:$TAG
-                    
+                  
+                    echo "💾 환경 변수 파일 로드"
+                    aws ssm get-parameter --name ${{ secrets.PARAMETER_NAME }} --with-decryption --query 'Parameter.Value' --output text > env_file
+                  
                     echo "📦 새로운 컨테이너 실행"
                     docker-compose pull ${NEW_VERSION}-1 ${NEW_VERSION}-2
                     docker-compose up -d --no-deps --force-recreate --remove-orphans --build ${NEW_VERSION}-1 ${NEW_VERSION}-2
