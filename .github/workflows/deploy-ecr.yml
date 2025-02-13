@@ -48,7 +48,8 @@ jobs:
                     --platform linux/amd64 \
                     --push \
                     -t ${{secrets.AWS_ECR}}.dkr.ecr.ap-northeast-2.amazonaws.com/${{secrets.AWS_ECR_NAME}}:${{ steps.set-tag.outputs.TAG }} \
-                    -t ${{secrets.AWS_ECR}}.dkr.ecr.ap-northeast-2.amazonaws.com/${{secrets.AWS_ECR_NAME}}:latest .
+                    -t ${{secrets.AWS_ECR}}.dkr.ecr.ap-northeast-2.amazonaws.com/${{secrets.AWS_ECR_NAME}}:latest \
+                    .
 
     deploy:
         needs: [build-and-push]
