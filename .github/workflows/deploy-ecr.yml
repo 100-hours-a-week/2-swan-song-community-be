@@ -24,18 +24,31 @@ jobs:
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v2
 
-            - name: Login to GitHub Container Registry
+            - name: AWS CLI Installation
               run: |
-                  echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ secrets.REPOSITORY_OWNER }}" --password-stdin
-                  docker info | grep "Username"
+                  sudo apt-get update
+                  sudo apt-get install -y zip
+                  curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+                  unzip awscliv2.zip
+                  sudo ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update
+
+            - name: Configure AWS Credentials
+              run: |
+                  aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+                  aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                  aws configure set region ${{ secrets.AWS_REGION }}
+
+            - name: Login to Elastic Container Registry
+              run: |
+                  aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin ${{secrets.AWS_ECR}}.dkr.ecr.ap-northeast-2.amazonaws.com
 
             - name: Build and push Docker image
               run: |
                   docker buildx build \
                     --platform linux/amd64 \
                     --push \
-                    -t ghcr.io/${{ secrets.REPOSITORY_OWNER }}/community-server:${{ steps.set-tag.outputs.TAG }} \
-                    -t ghcr.io/${{ secrets.REPOSITORY_OWNER }}/community-server:latest .
+                    -t ${{secrets.AWS_ECR}}.dkr.ecr.ap-northeast-2.amazonaws.com/${{secrets.AWS_ECR_NAME}}:${{ steps.set-tag.outputs.TAG }} \
+                    -t ${{secrets.AWS_ECR}}.dkr.ecr.ap-northeast-2.amazonaws.com/${{secrets.AWS_ECR_NAME}}:latest .
 
     deploy:
         needs: [build-and-push]
@@ -78,7 +91,7 @@ jobs:
                     echo "🚀 새로운 컨테이너 배포: \$NEW_VERSION"
                     echo "✅ 사용되는 이미지 태그: \$TAG"
                     
-                    docker pull ghcr.io/${{ secrets.REPOSITORY_OWNER }}/community-server:\$TAG
+                    docker pull ${{secrets.AWS_ECR}}.dkr.ecr.ap-northeast-2.amazonaws.com/${{secrets.AWS_ECR_NAME}}:\$TAG
                   
                     echo "💾 환경 변수 파일 로드"
                     aws ssm get-parameter --name ${{ secrets.PARAMETER_NAME }} --with-decryption --query 'Parameter.Value' --output text > env_file
