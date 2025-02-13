@@ -207,14 +207,16 @@ authRouter.post('/signin', multipartImageProcessor.none(), async (req, res) => {
 });
 
 // 로그아웃
-authRouter.post('/logout', (req, res) => {
+authRouter.post('/logout', async (req, res) => {
     const sessionId = req.cookies.session_id;
 
     if (sessionId === undefined) {
         throw new ErrorResponse(401, 4001, '유효하지 않은 요청입니다', null);
     }
 
-    const apiResponse = authController.logout(res, sessionId);
+    const apiResponse = await withTransaction(async  conn => {
+        return authController.logout(conn, res, sessionId);
+    });
     apiResponse.resolve(res);
 });
 
@@ -238,7 +240,7 @@ authRouter.delete('/withdrawal', async (req, res) => {
 });
 
 // client에서 로그인 여부 확인을 위한 API
-authRouter.get('/isLoggedIn', (req, res) => {
+authRouter.get('/isLoggedIn', async (req, res) => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -249,7 +251,10 @@ authRouter.get('/isLoggedIn', (req, res) => {
 
     const token = authHeader.split(' ')[1];
 
-    const loggedInStatus = isLoggedIn(token);
+    const loggedInStatus = await withTransaction(async conn => {
+        return isLoggedIn(conn, token);
+    });
+
     if (loggedInStatus) {
         return res.status(200).json({
             code: 200,

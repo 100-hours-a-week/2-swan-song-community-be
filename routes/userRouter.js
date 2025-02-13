@@ -27,10 +27,13 @@ userRouter.use(express.json());
 userRouter.use(cookieParser());
 
 // 인가 미들웨어 정의
-const checkAuthorization = (req, res, next) => {
+const checkAuthorization = async (req, res, next) => {
     const sessionId = req.cookies.session_id;
+    const loginFlag = await withTransaction(async conn => {
+        return isLoggedIn(conn, sessionId);
+    })
 
-    if (!isLoggedIn(sessionId)) {
+    if (!loginFlag) {
         throw new ErrorResponse(401, 4001, '인증 정보가 필요합니다.', null);
     }
     next(); // 인증된 경우 다음 미들웨어 또는 라우트로 진행

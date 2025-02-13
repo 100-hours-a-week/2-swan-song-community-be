@@ -1,38 +1,33 @@
 import { userDao } from '../dao/userDaos.js';
+import { loginSessionDao } from '../dao/loginSessionDaos.js';
 
-import { withTransaction } from './transactionManager.js';
-
-const sessions = {}; // 로그인 세션을 저장
+import { LoginSession } from '../model/loginSession.js';
 
 // 로그인 세션 추가
-export function addSession(user) {
+export function addSession(conn, user) {
     const sessionId = Math.random().toString(36).substr(2, 10);
-    const { password, ...userWithoutPassword } = user;
-    sessions[sessionId] = userWithoutPassword;
+    const loginSession = new LoginSession(sessionId, user.id);
+    loginSessionDao.createLoginSession(conn, loginSession);
     return sessionId;
 }
 
 // 로그인 세션 제거
-export function removeSession(sessionId) {
-    delete sessions[sessionId];
+export function removeSession(conn, sessionId) {
+    loginSessionDao.deleteLoginSessionBySessionId(conn, sessionId);
 }
 
 // 특정 회원 로그인 세션 제거
-export function removeSessionByUserId(userId) {
-    for (const sessionId in sessions) {
-        if (sessions[sessionId].id === userId) {
-            delete sessions[sessionId];
-            break;
-        }
-    }
+export function removeSessionByUserId(conn, userId) {
+    loginSessionDao.deleteAllByUserId(conn, userId);
 }
 
 // 로그인 세션 조회 (회원을 두 저장소에서 다루니 동기화 문제 발생. 참조만 사용해 해결)
 export async function getLoggedInUser(conn, sessionId) {
-    return userDao.findById(conn, sessions[sessionId].id);
+    const session = await loginSessionDao.findBySessionId(conn, sessionId);
+    return userDao.findById(conn, session.userId);
 }
 
 // 로그인 여부 확인
-export function isLoggedIn(sessionId) {
-    return !!sessions[sessionId];
+export function isLoggedIn(conn, sessionId) {
+    return loginSessionDao.findBySessionId(conn, sessionId) !== undefined;
 }

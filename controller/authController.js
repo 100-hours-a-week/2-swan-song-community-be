@@ -80,13 +80,13 @@ class AuthController {
         }
 
         // 기존 세션에 저장된 로그인 기록 제거
-        const existingSession = isLoggedIn(sessionIdToRemove);
+        const existingSession = isLoggedIn(conn, sessionIdToRemove);
         if (existingSession && existingSession.id === user.id) {
-            removeSession(sessionIdToRemove);
+            removeSession(conn, sessionIdToRemove);
         }
-        removeSessionByUserId(user.id);
+        removeSessionByUserId(conn, user.id);
 
-        const sessionId = addSession(user);
+        const sessionId = addSession(conn, user);
         const sessionOptions = {
             maxAge: 1000 * 60 * 60 * 24 * 7, // 7일
             sameSite: 'Strict',
@@ -100,8 +100,8 @@ class AuthController {
         return new ApiResponse(200, 2000, '로그인 성공', data);
     }
 
-    logout(res, sessionId) {
-        removeSession(sessionId);
+    logout(conn, res, sessionId) {
+        removeSession(conn, sessionId);
         res.clearCookie('session_id');
 
         return new ApiResponse(204);
@@ -121,7 +121,7 @@ class AuthController {
             deleteImage(user.profileImageKey);
         }
 
-        removeSession(sessionId);
+        removeSession(conn, sessionId);
         res.clearCookie('session_id');
 
         return new ApiResponse(204);
