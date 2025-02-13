@@ -25,7 +25,9 @@ jobs:
               uses: docker/setup-buildx-action@v2
 
             - name: Login to GitHub Container Registry
-              run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ secrets.REPOSITORY_OWNER }}" --password-stdin
+              run: |
+                  echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ secrets.REPOSITORY_OWNER }}" --password-stdin
+                  docker info | grep "Username"
 
             - name: Build and push Docker image
               run: |
@@ -50,7 +52,9 @@ jobs:
                   chmod 600 key.pem
 
             - name: Login to GitHub Container Registry
-              run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ secrets.REPOSITORY_OWNER }}" --password-stdin
+              run: |
+                  echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ secrets.REPOSITORY_OWNER }}" --password-stdin
+                  docker info | grep "Username"
 
             - name: SSH into EC2 and Deploy
               run: |
