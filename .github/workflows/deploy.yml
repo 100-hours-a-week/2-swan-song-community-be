@@ -49,6 +49,9 @@ jobs:
                   echo "${{ secrets.EC2_SSH_KEY }}" | base64 --decode > key.pem
                   chmod 600 key.pem
 
+            - name: Login to GitHub Container Registry
+              run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ secrets.REPOSITORY_OWNER }}" --password-stdin
+
             - name: SSH into EC2 and Deploy
               run: |
                   HOST=${{ secrets.EC2_HOST }}
