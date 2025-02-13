@@ -51,11 +51,6 @@ jobs:
                   echo "${{ secrets.EC2_SSH_KEY }}" | base64 --decode > key.pem
                   chmod 600 key.pem
 
-            - name: Login to GitHub Container Registry
-              run: |
-                  echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ secrets.REPOSITORY_OWNER }}" --password-stdin
-                  docker info | grep "Username"
-
             - name: SSH into EC2 and Deploy
               run: |
                   HOST=${{ secrets.EC2_HOST }}
@@ -82,6 +77,10 @@ jobs:
                     
                     echo "🚀 새로운 컨테이너 배포: \$NEW_VERSION"
                     echo "✅ 사용되는 이미지 태그: \$TAG"
+                  
+                  
+                    echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ secrets.REPOSITORY_OWNER }}" --password-stdin
+                    docker info | grep "Username"
                     
                     docker pull ghcr.io/${{ secrets.REPOSITORY_OWNER }}/community-server:\$TAG
                   
